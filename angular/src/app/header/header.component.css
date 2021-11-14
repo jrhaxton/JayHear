@@ -15,21 +15,20 @@ ul {
     font-size: 1.5rem;
 }
 
-li {
+div {
     color: rgb(28, 72, 138);
-    float: left;
+    float: right;
     margin: 5px;
 }
 
-li a {
+div a {
     color:white;
     text-align: center;
     padding: 16px 20px;
     text-decoration: none;
 }
 
-li a:hover {
+div a:hover {
     background-color:rgba(9, 25, 97, 0.151);
     opacity: 0.8;
 }
-  
