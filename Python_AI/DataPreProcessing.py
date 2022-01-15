@@ -178,8 +178,8 @@ class Extract_Files:
         self.audio_file_dir = export_to
         os.mkdir(self.audio_file_dir)
         for i in range(0, stft_clean.shape[1]):
-            stft_combined_split = stft_combined[:, i:i + 1]  # [0,1]
-            stft_clean_split = stft_clean[:, i:i + 1]
+            stft_combined_split = stft_combined[:, i:i + 1].reshape(129)  # [0,1]
+            stft_clean_split = stft_clean[:, i:i + 1].reshape(129)
             self.extract_files(stft_combined_split, stft_clean_split, i, combined)
 
     def extract_frames(self, stft_combined: np.array, stft_clean: np.array, export_to: str, combined: str) -> None:
