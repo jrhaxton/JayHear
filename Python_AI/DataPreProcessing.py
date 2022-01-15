@@ -173,11 +173,21 @@ class Extract_Files:
         else:
             return False
 
+    def extract_single_frame(self, stft_combined: np.array, stft_clean: np.array, export_to: str, combined: str) -> None:
+        # (frequency bins, frames)
+        self.audio_file_dir = export_to
+        os.mkdir(self.audio_file_dir)
+        for i in range(0, stft_clean.shape[1]):
+            stft_combined_split = stft_combined[:, i:i + 1]  # [0,1]
+            stft_clean_split = stft_clean[:, i:i + 1]
+            self.extract_files(stft_combined_split, stft_clean_split, i, combined)
+
     def extract_frames(self, stft_combined: np.array, stft_clean: np.array, export_to: str, combined: str) -> None:
         self.audio_file += 1
         # (frequency bins, frames)
-        self.audio_file_dir = export_to + '/' + str(self.audio_file)
-        os.mkdir(self.audio_file_dir)
+        # self.audio_file_dir = export_to + '/' + str(self.audio_file)
+        self.audio_file_dir = export_to
+        # os.mkdir(self.audio_file_dir)
         for i in range(0, stft_clean.shape[1]):
             stft_combined_split = stft_combined[:, i:i + 8]  # [0,1]
             stft_clean_split = stft_clean[:, i:i + 1]
@@ -185,11 +195,11 @@ class Extract_Files:
 
     def extract_files(self, stft_combined: np.array, stft_clean: np.array, count: int, combined_name: str) -> None:
         # I had to change dimensions because numpy has a weird bug where they cant be the same dimensions
-        zeros: np.array = np.zeros((1, 8))
-        stft_combined = np.append(zeros, stft_combined, axis=0)
+        # zeros: np.array = np.zeros((1, 8))
+        # stft_combined = np.append(zeros, stft_combined, axis=0)
         self.data.append(np.array(stft_combined))
         self.data.append(np.array(stft_clean))
-        np.save(self.audio_file_dir + '/' + combined_name[:-4] + '-' + str(count) + '.wav', self.data)  # saving as [combined, clean]
+        np.save(self.audio_file_dir + '/' + combined_name[:-4] + '-' + str(count) + '.wav', self.data)  # saving as [combined, clean] combined_name[:-4]
         self.data.clear()
 
     def spectrogram(self, stft_combined: np.array, stft_clean: np.array, export_to: str, combined: str):
@@ -201,7 +211,7 @@ class Extract_Files:
 
 class LogSpectrogram:
     def __init__(self, source_clean: str, source_combined: str, export_to: str, extract_files: Extract_Files
-                 , audio_features: Dict[str, str], frames=False):
+                 , audio_features: Dict[str, str]):
         self.source_clean = source_clean
         self.source_combined = source_combined
         self.files_clean: list = natsorted(os.listdir(self.source_clean))
@@ -210,7 +220,6 @@ class LogSpectrogram:
         self.export_to = export_to
         self.extract = extract_files
         self.audio_features = audio_features
-        self.frames=frames
 
     def _remove_silent_frames(self, audio) -> np.array:
         trimed_audio = []
@@ -227,13 +236,13 @@ class LogSpectrogram:
         fig.colorbar(img, ax=ax, format="%+2.0f dB")
         plt.show()
 
-    def create_logspectrogram(self, file, source, is_Combined=False, frames=False) -> np.array:
+    def create_logspectrogram(self, file, source, frames=False) -> np.array:
         signal, sr = librosa.load(source + "/" + file, sr=self.audio_features['frame_rate'])
         #signal=self._remove_silent_frames(signal)
         # taking abs only keeps the magnitude informations and gets rid of complex numbers and phase
-        stft: np.array = np.abs(librosa.stft(signal, n_fft=256, hop_length=round(256 * 0.25),
-                                             win_length=256, window=scipy.signal.hamming(256, sym=False), center=True))
-        if is_Combined and frames:  # This is added so when we extract the first 8 frames of combined it lands on 1 for clean
+        stft: np.array = librosa.amplitude_to_db(np.abs(librosa.stft(signal, n_fft=256, hop_length=round(256 * 0.25),
+                                             win_length=256, window=scipy.signal.hamming(256, sym=False), center=True)))
+        if frames:  # This is added so when we extract the first 8 frames of combined it lands on 1 for clean
             zeros = np.zeros((129, 7))
             stft = np.append(zeros, stft, axis=1)
         # self.show_spectrogram(stft)
@@ -241,60 +250,71 @@ class LogSpectrogram:
         stft=normalize.fit_transform(stft)
         return stft
 
-    def logspectrogram(self) -> None:
+    def multi_framed_logspectrogram(self) -> None:
+        if self.frames:
+            np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
+            os.mkdir(self.export_to)
+            print("Running")
+            for folder in self.files_clean:
+                combined_dir: str = self.source_combined + '/' + folder
+                clean_dir: str = self.source_clean + '/' + folder
+                self.export_to: str = self.base + '/' + folder
+                os.mkdir(self.export_to)
+                zip_list = zip(natsorted(os.listdir(combined_dir)), natsorted(os.listdir(clean_dir)))
+                for i, (combined, clean) in enumerate(zip_list):
+                    try:
+                        combined_log: np.array = self.create_logspectrogram(combined, combined_dir, True)
+                        clean_log: np.array = self.create_logspectrogram(clean, clean_dir)
+                        self.extract.extract_frames(combined_log, clean_log, self.export_to, combined)
+                        print(f'Exporting spectrogram {i} of {len(natsorted(os.listdir(combined_dir)))} from folder {folder}')
+                    except Exception as e:
+                        exc_type, exc_obj, exc_tb = sys.exc_info()
+                        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                        print(e, exc_tb.tb_lineno)
+            print("Saving List...")
+
+    def single_framed_logspectrogram(self):
         np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
         os.mkdir(self.export_to)
-        print("Running")
-        for folder in self.files_clean:
-            combined_dir: str = self.source_combined + '/' + folder
-            clean_dir: str = self.source_clean + '/' + folder
-            self.export_to: str = self.base + '/' + folder
-            os.mkdir(self.export_to)
-            zip_list = zip(natsorted(os.listdir(combined_dir)), natsorted(os.listdir(clean_dir)))
-            for i, (combined, clean) in enumerate(zip_list):
-                try:
-                    combined_log: np.array = self.create_logspectrogram(combined, combined_dir, True, self.frames)
-                    clean_log: np.array = self.create_logspectrogram(clean, clean_dir)
-                    if self.frames:
-                        self.extract.extract_frames(combined_log, clean_log, self.export_to, combined)
-                    else:
-                        self.extract.spectrogram(combined_log, clean_log, self.export_to, combined)
-                    print(f'Exporting spectrogram {i} of {len(natsorted(os.listdir(combined_dir)))} from folder {folder}')
-                except Exception as e:
-                    exc_type, exc_obj, exc_tb = sys.exc_info()
-                    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                    print(e, exc_tb.tb_lineno)
+        zip_list = zip(self.files_combined, self.files_clean)
+        for i, (combined, clean) in enumerate(zip_list):
+            try:
+                combined_log: np.array = self.create_logspectrogram(combined, self.source_combined)
+                clean_log: np.array = self.create_logspectrogram(clean, self.source_clean)
+                print(f'Exporting spectrogram {i} of {len(self.files_combined)}')
+                self.extract.extract_single_frame(combined_log, clean_log, self.export_to+'/'+combined[:-4], combined)
+            except Exception as e:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                print(e, exc_tb.tb_lineno)
         print("Saving List...")
-
-    def run(self) -> None:
-        self.logspectrogram()
 
 
 def main(arguments):
     """Main func."""
     audio_features: Dict[str, str] = {'frame_rate': 11025, 'channels': 1}
 
-    source: str="/home/braden/Environments/Research/Audio/Research(Refactored)/Data/Mozilla_MP3"
-    files: List[str]=os.listdir(source)
-    destination: str="/home/braden/Environments/Research/Audio/Research(Refactored)/Data/Mozilla_WAV"
-    CreateFolder: FolderSize=FolderSize(destination)
-    folder_size: int=10
-    convertToWave: ConvertToWav=ConvertToWav(files, source, destination, CreateFolder, folder_size, audio_features)
-    convertToWave.run()
+    # source: str="/home/braden/Environments/Research/Audio/Research(Refactored)/Data/Mozilla_MP3"
+    # files: List[str]=os.listdir(source)
+    # destination: str="/home/braden/Environments/Research/Audio/Research(Refactored)/Data/Mozilla_WAV"
+    # CreateFolder: FolderSize=FolderSize(destination)
+    # folder_size: int=10
+    # convertToWave: ConvertToWav=ConvertToWav(files, source, destination, CreateFolder, folder_size, audio_features)
+    # convertToWave.run()
+    #
+    # Clean_folder: str = "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/Mozilla_WAV"
+    # Background_folder: str = "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/UrbanSound8K"
+    # Combined_folder: str = "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/Combined"
+    # snr: SNR=SNR()
+    # start: CombineAudio = CombineAudio(Clean_folder, Background_folder, Combined_folder, snr, audio_features)
+    # start.run()
 
-    Clean_folder: str = "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/Mozilla_WAV"
-    Background_folder: str = "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/UrbanSound8K"
-    Combined_folder: str = "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/Combined"
-    snr: SNR=SNR()
-    start: CombineAudio = CombineAudio(Clean_folder, Background_folder, Combined_folder, snr, audio_features)
-    start.run()
-
-    source_clean: str = "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/Mozilla_WAV"
-    source_combined: str = "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/Combined"
+    source_clean: str = "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/MS-SNSD/CleanSpeech_training"
+    source_combined: str = "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/MS-SNSD/NoisySpeech_training"
     export_to: str = "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/Spectrogram"
     extract_files: Extract_Files = Extract_Files()
-    test: LogSpectrogram = LogSpectrogram(source_clean, source_combined, export_to, extract_files, audio_features, frames=True)
-    test.run()
+    test: LogSpectrogram = LogSpectrogram(source_clean, source_combined, export_to, extract_files, audio_features)
+    test.single_framed_logspectrogram()
 
 
 if __name__ == "__main__":
