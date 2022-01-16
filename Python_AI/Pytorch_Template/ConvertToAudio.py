@@ -19,12 +19,12 @@ class ConvertToAudio:
         self.window = scipy.signal.hamming(256, sym=False)
         self.noisy_log_spec = []
         self.clean_log_spec=[]
-        self.noisy_log_spec_abs=[]
         self.modeled_audio = 0
         self.min_norm=0
         self.max_norm = 0
         self.clean_phase = None
         self.noisy_phase = None
+        self.MinMax=None
 
     def show_spectrogram(self, clean_audio, experiment) -> None:
         fig, ax = plt.subplots(nrows=3, ncols=1, sharex=True)
@@ -35,7 +35,7 @@ class ConvertToAudio:
         ax[0].set_title('Clean Spectrogram')
         ax[0].label_outer()
 
-        img = librosa.display.specshow(librosa.amplitude_to_db(self.noisy_log_spec_abs, ref=np.max), y_axis='linear',
+        img = librosa.display.specshow(self.noisy_log_spec[0, 0, :, :].numpy(), y_axis='linear',
                                        x_axis='time',
                                        ax=ax[1], sr=11025, hop_length=round(256 * 0.25))
         ax[1].set_title('Noisy Spectrogram')
@@ -55,8 +55,11 @@ class ConvertToAudio:
         self.modeled_audio=self.denormalize(self.modeled_audio)
         if (phase_scale):
             clean_signal = self._phase_aware_scaling(self.modeled_audio, self.clean_phase, self.noisy_phase)
-        clean_signal = librosa.istft(self.modeled_audio, hop_length=round(256 * 0.25), win_length=256,
+            clean_signal = librosa.istft(librosa.db_to_amplitude(clean_signal), hop_length=round(256 * 0.25), win_length=256,
                                      window=self.window, center=True)
+        else:
+            clean_signal = librosa.istft(librosa.db_to_amplitude(self.modeled_audio), hop_length=round(256 * 0.25), win_length=256,
+                                         window=self.window, center=True)
         # print(f'Denoised shape: {clean_signal.shape}')
         return clean_signal
 
@@ -72,25 +75,28 @@ class ConvertToAudio:
     def normalize(self, array):
         self.min_norm=torch.min(array).item()
         self.max_norm=torch.max(array).item()
-        clean = MinMaxScaler()
-        return self.adjust_shape(clean.fit_transform(array))
+        self.MinMax = MinMaxScaler()
+        return self.adjust_shape(self.MinMax.fit_transform(array))
 
     def denormalize(self, norm):
-        array = (norm - self.min_norm) / (self.max_norm - self.min_norm)
-        array = array * (self.max_norm - self.min_norm) + self.min_norm
-        return array
+        # array = (norm - self.min_norm) / (self.max_norm - self.min_norm)
+        # array = array * (self.max_norm - self.min_norm) + self.min_norm
+        return self.MinMax.inverse_transform(norm)
 
     def add_zeros_to_front(self, array):
         zeros = np.zeros((1, 1, 129, 7))
         array = torch.tensor(np.append(zeros, array, axis=3))
         return array
 
-    def create_frames(self, array, i):
+    def create_frames(self, array, i, single):
         temp = self.model(array.float())
         if i % 100 == 0:
             print(f'Modeling frame: {i}')
-        temp = temp[0, 0, :, :]
-        temp = temp.detach().numpy()
+        if single:
+            temp = temp[0, 0, :]
+        else:
+            temp = temp[0, 0, :, :]
+        temp = temp.detach().numpy().reshape((129, 1))
         return temp
 
     def your_counter(self, count, stop):
@@ -102,15 +108,24 @@ class ConvertToAudio:
         # if (self.your_counter(count=i, stop=435)):
         #     print('worked')
 
-    def feed_into_model(self):
+    def feed_multi_into_model(self):
         model_frames = []
         self.noisy_log_spec = self.add_zeros_to_front(self.noisy_log_spec)
         self.modeled_audio = np.zeros((129, 1))
         self.noisy_log_spec=self.normalize(self.noisy_log_spec[0, 0, :, :])
         for i in range(0, self.clean_phase.shape[1]):
-            frame = self.create_frames(self.noisy_log_spec[:, :, :, i:i + 8], i)
-            model_frames.append(frame)
-            self.modeled_audio = np.append(self.modeled_audio, model_frames[i], axis=1)
+            frame = self.create_frames(self.noisy_log_spec[:, :, :, i:i + 8], i, single=False)
+            self.modeled_audio = np.append(self.modeled_audio, frame, axis=1)
+
+        self.modeled_audio = self.modeled_audio[:, 1:]  # removes the layer of zeros we initially added
+
+    def feed_single_into_model(self):
+        model_frames = []
+        self.modeled_audio = np.zeros((129,1))
+        self.noisy_log_spec=self.normalize(self.noisy_log_spec[0, 0, :, :])
+        for i in range(0, self.clean_phase.shape[1]):
+            frame = self.create_frames(self.noisy_log_spec[:, :, :, i], i, single=True)
+            self.modeled_audio = np.append(self.modeled_audio, frame, axis=1)
 
         self.modeled_audio = self.modeled_audio[:, 1:]  # removes the layer of zeros we initially added
 
@@ -121,14 +136,13 @@ class ConvertToAudio:
         return audio
 
     def to_log_spectrogram(self):
-        noisy_signal, sr = librosa.load(path=self.combined_audio, sr=11025, dtype='double')
+        noisy_signal, sr = librosa.load(path=self.combined_audio, sr=16000, dtype='double')
         self.noisy_log_spec = librosa.stft(noisy_signal, n_fft=256, hop_length=round(256 * 0.25), win_length=256,
                                            window=self.window, center=True)
         self.noisy_phase = np.angle(self.noisy_log_spec)
-        self.noisy_log_spec_abs = np.abs(self.noisy_log_spec)
-        self.noisy_log_spec = self.adjust_shape(self.noisy_log_spec_abs)
+        self.noisy_log_spec = self.adjust_shape(librosa.amplitude_to_db(np.abs(self.noisy_log_spec)))
 
-        clean_signal, sr = librosa.load(self.clean_audio, 11025, dtype='double')
+        clean_signal, sr = librosa.load(self.clean_audio, 16000, dtype='double')
         self.clean_log_spec = librosa.stft(clean_signal, n_fft=256, hop_length=round(256 * 0.25), win_length=256,
                                            window=self.window, center=True)
         self.clean_phase = np.angle(self.clean_log_spec)
@@ -156,10 +170,10 @@ def denoise_audio_files(config: JsonParser, device: torch.device):
     model = load_model(model, config)
     convert = ConvertToAudio(model, config.get_combined_audio(), config.get_clean_audio())
     convert.to_log_spectrogram()
-    convert.feed_into_model()
+    convert.feed_single_into_model()
     clean_audio = convert.apply_griffin(phase_scale=False)
     convert.show_spectrogram(clean_audio, config.get_experiment_name())
-    sf.write(config.get_denoised_audio(), clean_audio, 11025, 'PCM_24')
+    sf.write(config.get_denoised_audio(), clean_audio, 16000, 'PCM_24')
     print('=> Denoising Audio Complete')
 
 
@@ -167,7 +181,7 @@ def main(arguments):
     """Main func."""
     device: torch.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     config: JsonParser = JsonParser(
-        '/home/braden/Environments/Research/Audio/Research(Refactored)/Code/Pytorch_Template/config_files/experiment4.json')
+        '/home/braden/Environments/JayHear/Python_AI/Pytorch_Template/config_files/experiment5.json')
     denoise_audio_files(config, device)
 
 
