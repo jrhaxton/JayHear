@@ -180,6 +180,29 @@ class ConvAutoEncoder_1st(nn.Module):
         layer4 = self.relu(self.deconv1_bn(self.deconv1(layer3)))
         return layer4
 
+class ConvAutoEncoder_1d(nn.Module):
+    def __init__(self):
+        # N, 1, 64, 87
+        super(ConvAutoEncoder_1d, self).__init__()
+        self.relu = nn.ReLU()
+        self.conv1 = nn.Conv1d(in_channels=1, out_channels=64, kernel_size=1)
+        self.conv1_bn = nn.BatchNorm1d(num_features=64)  # 1
+        self.conv2 = nn.Conv1d(64, 128, 1)
+        self.conv2_bn = nn.BatchNorm1d(128)  # 2
+
+        self.deconv2 = nn.ConvTranspose1d(128, 64, 1)
+        self.deconv2_bn = nn.BatchNorm1d(64)
+        self.deconv1 = nn.ConvTranspose1d(64, 1, 1)
+        self.deconv1_bn = nn.BatchNorm1d(1)
+
+    def forward(self, x):
+        layer1 = self.relu(self.conv1_bn(self.conv1(x)))
+        layer2 = self.relu(self.conv2_bn(self.conv2(layer1)))
+
+        layer3 = self.relu(self.deconv2_bn(self.deconv2(layer2)))
+        layer4 = self.relu(self.deconv1_bn(self.deconv1(layer3)))
+        return layer4
+
 
 class ConvAutoEncoder_Dense(nn.Module):
     def __init__(self):
