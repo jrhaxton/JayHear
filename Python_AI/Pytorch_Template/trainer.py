@@ -43,7 +43,42 @@ class Trainer:
         """
         return combined.unsqueeze(dim=1).float(), clean.unsqueeze(dim=1).float()
 
-    def train(self):
+    def train_single_frames(self):
+        torch.manual_seed(2)
+        for epoch in range(self.config.get_epochs()):
+            epoch_loss = 0
+            model_to_save = {'state': self.model.state_dict(), 'optimizer': self.optimizer.state_dict()}
+            spectrograms: List[str] = natsorted(os.listdir(self.data_paths['base']))
+            loop = tqdm(spectrograms, leave=False)
+            loop.set_description(f'Epoch [{epoch + 1}/{self.config.get_epochs()}]')
+            for spectrogram in loop:
+                data: AudioDenoiserDataset = AudioDenoiserDataset(self.data_paths['base']+spectrogram)
+                dataloader: DataLoader = self.config.get_dataloader(data)
+                for i, (combined, clean) in enumerate(dataloader):
+                    # Data augmentation
+                    combined, clean = combined.to(self.device), clean.to(self.device)
+                    combined, clean = self.add_channels(combined, clean)
+
+                    # forward
+                    decoded = self.model(combined)
+                    _loss = self.loss(decoded, clean)
+
+                    # backward
+                    self.optimizer.zero_grad()
+                    _loss.backward()
+                    self.optimizer.step()
+                    self.lr_scheduler.step()
+
+                    #loss
+                    epoch_loss += decoded.shape[0] * _loss.item()
+
+                    #tqdm
+                    loop.set_postfix(loss=_loss.item())
+            print(f'Epoch: {epoch + 1} Loss: {epoch_loss / len(data)}')
+            self.save_checkpoint(model_to_save, self.config.get_model_save_path())
+
+    def train_multi_frame(self):
+        torch.manual_seed(2)
         for epoch in range(self.config.get_epochs()):
             model_to_save = {'state': self.model.state_dict(), 'optimizer': self.optimizer.state_dict()}
             loop = tqdm(self.data_paths['folders'], leave=False)
@@ -77,19 +112,19 @@ class Trainer:
 def main(arguments):
     """Main func."""
     data_paths: Dict[str, List[str]] = {
-        'base': "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/training/",
+        'base': "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/Spectrogram/",
         'folders': natsorted(os.listdir("/home/braden/Environments/Research/Audio/Research(Refactored)/Data/training/"))}
 
     device: torch.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f'Using: {device}')
-    config: JsonParser = JsonParser('config_files/experiment4.json')
+    config: JsonParser = JsonParser('config_files/experiment5.json')
     model: Model = config.get_model(device)
     loss: nn.Loss = config.get_loss()
     optimizer: torch.optim = config.get_optimizer(model)
     lr_scheduler: torch.optim.lr_scheduler = config.get_lr_scheduler(optimizer)
 
     trainer = Trainer(config, model, loss, optimizer, lr_scheduler, data_paths, device)
-    trainer.train()
+    trainer.train_single_frames()
     # summary(model, (1, 129, 8))#(channels, H, W)
     print('=> Training Finished')
 
