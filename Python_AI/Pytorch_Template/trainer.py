@@ -106,18 +106,18 @@ class Trainer:
 
                         # tqdm
                         loop.set_postfix(loss=_loss.item())
-        self.save_checkpoint(model_to_save, self.config.get_model_save_path())
+            self.save_checkpoint(model_to_save, self.config.get_model_save_path())
 
 
 def main(arguments):
     """Main func."""
     data_paths: Dict[str, List[str]] = {
-        'base': "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/Spectrogram/",
+        'base': "/media/braden/Rage Pro/Spectrogram/",
         'folders': natsorted(os.listdir("/home/braden/Environments/Research/Audio/Research(Refactored)/Data/training/"))}
 
     device: torch.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f'Using: {device}')
-    config: JsonParser = JsonParser('config_files/experiment5.json')
+    config: JsonParser = JsonParser('config_files/experiment6.json')
     model: Model = config.get_model(device)
     loss: nn.Loss = config.get_loss()
     optimizer: torch.optim = config.get_optimizer(model)
@@ -125,7 +125,7 @@ def main(arguments):
 
     trainer = Trainer(config, model, loss, optimizer, lr_scheduler, data_paths, device)
     trainer.train_single_frames()
-    # summary(model, (1, 129, 8))#(channels, H, W)
+    # summary(model, (1, 129))#(channels, H, W)
     print('=> Training Finished')
 
 if __name__ == "__main__":
