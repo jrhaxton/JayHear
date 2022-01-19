@@ -1,6 +1,6 @@
 {
     "arch": {
-        "type": "ConvAutoEncoder",
+        "type": "ConvAutoEncoder_1d",
         "args": {}
     },
     "DataLoader": {
@@ -12,7 +12,7 @@
     "optimizer": {
         "type": "Adam",
         "args":{
-            "lr": 0.001,
+            "lr": 0.01,
             "weight_decay": 0
         }
     },
@@ -20,21 +20,21 @@
     "lr_scheduler": {
         "type": "StepLR",
         "args": {
-            "step_size": 1,
+            "step_size": 100,
             "gamma": 0.1
         }
     },
     "trainer": {
-        "epochs": 3,
+        "epochs": 500,
         "save_dir": "/home/braden/Environments/Research/Audio/Research(Refactored)/Model/"
     },
     "paths": {
         "model" : "/home/braden/Environments/Research/Audio/Research(Refactored)/Model/state.pt",
-        "combined_audio" : "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/Combined/810/common_voice_en_2438-3.wav",
-        "clean_audio" : "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/Mozilla_WAV/810/common_voice_en_2438.wav",
-        "denoised_audio" : "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/Denoised/experiment4.wav"
+        "combined_audio" : "/media/braden/Rage Pro/MS-SNSD/NoisySpeech_testing/noisy4_SNRdb_0.0_clnsp4.wav",
+        "clean_audio" : "/media/braden/Rage Pro/MS-SNSD/CleanSpeech_testing/clnsp4.wav",
+        "denoised_audio" : "/media/braden/Rage Pro/Denoised/experiment6.wav"
 
     },
-    "spectrograms" : 290,
-    "file_name" : "experiment4.json"
+    "spectrograms" : 1,
+    "file_name" : "experiment6.json"
 }

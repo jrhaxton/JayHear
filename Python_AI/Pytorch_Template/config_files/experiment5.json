@@ -1,6 +1,6 @@
 {
     "arch": {
-        "type": "ConvAutoEncoder",
+        "type": "ConvAutoEncoder_1d",
         "args": {}
     },
     "DataLoader": {
@@ -20,21 +20,21 @@
     "lr_scheduler": {
         "type": "StepLR",
         "args": {
-            "step_size": 1,
+            "step_size": 3,
             "gamma": 0.1
         }
     },
     "trainer": {
-        "epochs": 3,
+        "epochs": 10,
         "save_dir": "/home/braden/Environments/Research/Audio/Research(Refactored)/Model/"
     },
     "paths": {
         "model" : "/home/braden/Environments/Research/Audio/Research(Refactored)/Model/state.pt",
-        "combined_audio" : "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/Combined/810/common_voice_en_2438-3.wav",
-        "clean_audio" : "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/Mozilla_WAV/810/common_voice_en_2438.wav",
-        "denoised_audio" : "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/Denoised/experiment4.wav"
+        "combined_audio" : "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/MS-SNSD/NoisySpeech_training/noisy2_SNRdb_0.0_clnsp2.wav",
+        "clean_audio" : "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/MS-SNSD/CleanSpeech_training/clnsp2.wav",
+        "denoised_audio" : "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/Denoised/experiment5.wav"
 
     },
-    "spectrograms" : 290,
-    "file_name" : "experiment4.json"
+    "spectrograms" : 140,
+    "file_name" : "experiment5.json"
 }
