@@ -171,7 +171,7 @@ def denoise_audio_files(config: JsonParser, device: torch.device):
     convert = ConvertToAudio(model, config.get_combined_audio(), config.get_clean_audio())
     convert.to_log_spectrogram()
     convert.feed_single_into_model()
-    clean_audio = convert.apply_griffin(phase_scale=False)
+    clean_audio = convert.apply_griffin(phase_scale=True)
     convert.show_spectrogram(clean_audio, config.get_experiment_name())
     sf.write(config.get_denoised_audio(), clean_audio, 16000, 'PCM_24')
     print('=> Denoising Audio Complete')
@@ -181,7 +181,7 @@ def main(arguments):
     """Main func."""
     device: torch.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     config: JsonParser = JsonParser(
-        '/home/braden/Environments/JayHear/Python_AI/Pytorch_Template/config_files/experiment5.json')
+        '/home/braden/Environments/JayHear/Python_AI/Pytorch_Template/config_files/experiment6.json')
     denoise_audio_files(config, device)
 
 

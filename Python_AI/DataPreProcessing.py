@@ -309,9 +309,9 @@ def main(arguments):
     # start: CombineAudio = CombineAudio(Clean_folder, Background_folder, Combined_folder, snr, audio_features)
     # start.run()
 
-    source_clean: str = "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/MS-SNSD/CleanSpeech_training"
-    source_combined: str = "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/MS-SNSD/NoisySpeech_training"
-    export_to: str = "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/Spectrogram"
+    source_clean: str = "/media/braden/Rage Pro/MS-SNSD/CleanSpeech_testing"
+    source_combined: str = "/media/braden/Rage Pro/MS-SNSD/NoisySpeech_testing"
+    export_to: str = "/media/braden/Rage Pro/Spectrogram"
     extract_files: Extract_Files = Extract_Files()
     test: LogSpectrogram = LogSpectrogram(source_clean, source_combined, export_to, extract_files, audio_features)
     test.single_framed_logspectrogram()
