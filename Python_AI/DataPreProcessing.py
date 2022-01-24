@@ -263,7 +263,7 @@ class LogSpectrogram:
         zip_list = zip(self.files_combined, self.files_clean)
         for i, (combined, clean) in enumerate(zip_list):
             try:
-                combined_log: np.array = self.create_logspectrogram(combined, self.source_combined)
+                combined_log: np.array = self.create_logspectrogram(combined, self.source_combined, frames=True)
                 clean_log: np.array = self.create_logspectrogram(clean, self.source_clean)
                 print(f'Exporting spectrogram {i} of {len(self.files_combined)}')
                 self.extract.extract_frames(combined_log, clean_log, self.export_to+'/'+combined[:-4], combined)
