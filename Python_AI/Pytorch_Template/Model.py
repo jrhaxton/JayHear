@@ -156,29 +156,99 @@ class ConvAutoEncoder(nn.Module):
         decoder_1 = self.relu(self.deconv1_bn(self.deconv1(decoder_2+encoder_1)))#
         return decoder_1
 
+class ConvAutoEncoder_Math_Works(nn.Module):
+    def __init__(self):
+        # N, 1, 64, 87
+        super(ConvAutoEncoder_Math_Works, self).__init__()
+        self.relu = nn.ReLU()
+        self.conv1 = nn.Conv2d(in_channels=1, out_channels=18, kernel_size=(8, 8), stride=(1, 1))
+        self.conv1_bn = nn.BatchNorm2d(num_features=18)
+        self.conv2 = nn.Conv2d(in_channels=18, out_channels=30, kernel_size=(5, 1), stride=(1, 1))
+        self.conv2_bn = nn.BatchNorm2d(num_features=30)
+        self.conv3 = nn.Conv2d(in_channels=30, out_channels=8, kernel_size=(8, 1), stride=(1, 1))
+        self.conv3_bn = nn.BatchNorm2d(num_features=8)
+
+        self.conv4 = nn.Conv2d(in_channels=8, out_channels=18, kernel_size=(8, 1), stride=(1, 1))
+        self.conv4_bn = nn.BatchNorm2d(num_features=18)
+        self.conv5 = nn.Conv2d(in_channels=18, out_channels=30, kernel_size=(5, 1), stride=(1, 1))
+        self.conv5_bn = nn.BatchNorm2d(num_features=30)
+        self.conv6 = nn.Conv2d(in_channels=30, out_channels=8, kernel_size=(8, 1), stride=(1, 1))
+        self.conv6_bn = nn.BatchNorm2d(num_features=8)
+
+        self.conv7 = nn.Conv2d(in_channels=8, out_channels=18, kernel_size=(8, 1), stride=(1, 1))
+        self.conv7_bn = nn.BatchNorm2d(num_features=18)
+        self.conv8 = nn.Conv2d(in_channels=18, out_channels=30, kernel_size=(5, 1), stride=(1, 1))
+        self.conv8_bn = nn.BatchNorm2d(num_features=30)
+        self.conv9 = nn.Conv2d(in_channels=30, out_channels=8, kernel_size=(8, 1), stride=(1, 1))
+        self.conv9_bn = nn.BatchNorm2d(num_features=8)
+
+        self.conv10 = nn.Conv2d(in_channels=8, out_channels=18, kernel_size=(8, 1), stride=(1, 1))
+        self.conv10_bn = nn.BatchNorm2d(num_features=18)
+        self.conv11 = nn.Conv2d(in_channels=18, out_channels=30, kernel_size=(5, 1), stride=(1, 1))
+        self.conv11_bn = nn.BatchNorm2d(num_features=30)
+        self.conv12 = nn.Conv2d(in_channels=30, out_channels=8, kernel_size=(8, 1), stride=(1, 1))
+        self.conv12_bn = nn.BatchNorm2d(num_features=8)
+
+        self.conv13 = nn.Conv2d(in_channels=8, out_channels=18, kernel_size=(8, 1), stride=(1, 1))
+        self.conv13_bn = nn.BatchNorm2d(num_features=18)
+        self.conv14 = nn.Conv2d(in_channels=18, out_channels=30, kernel_size=(5, 1), stride=(1, 1))
+        self.conv14_bn = nn.BatchNorm2d(num_features=30)
+        self.conv15 = nn.Conv2d(in_channels=30, out_channels=1, kernel_size=(129, 1), stride=(1, 1))
+        self.conv15_bn = nn.BatchNorm2d(num_features=1)
+
+
+    def forward(self, x):
+        layer1 = self.relu(self.conv1_bn(self.conv1(x)))
+        layer2 = self.relu(self.conv2_bn(self.conv2(layer1)))
+        layer3 = self.relu(self.conv3_bn(self.conv3(layer2)))
+        layer4 = self.relu(self.conv4_bn(self.conv4(layer3)))
+        layer5 = self.relu(self.conv5_bn(self.conv5(layer4)))
+        layer6 = self.relu(self.conv6_bn(self.conv6(layer5)))
+        layer7 = self.relu(self.conv7_bn(self.conv7(layer6)))
+        layer8 = self.relu(self.conv8_bn(self.conv8(layer7)))
+        layer9 = self.relu(self.conv9_bn(self.conv9(layer8)))
+        layer10 = self.relu(self.conv10_bn(self.conv10(layer9)))
+        layer11 = self.relu(self.conv11_bn(self.conv11(layer10)))
+        layer12 = self.relu(self.conv12_bn(self.conv12(layer11)))
+        layer13 = self.relu(self.conv13_bn(self.conv13(layer12)))
+        layer14 = self.relu(self.conv14_bn(self.conv14(layer13)))
+        layer15 = self.relu(self.conv15_bn(self.conv15(layer14)))
+
+        return layer15
+
 
 class ConvAutoEncoder_1st(nn.Module):
     def __init__(self):
         # N, 1, 64, 87
         super(ConvAutoEncoder_1st, self).__init__()
-        self.relu = nn.ReLU()
-        self.conv1 = nn.Conv2d(in_channels=1, out_channels=64, kernel_size=(1, 8))
-        self.conv1_bn = nn.BatchNorm2d(num_features=64)  # 1
-        self.conv2 = nn.Conv2d(64, 2056, (1, 1))
-        self.conv2_bn = nn.BatchNorm2d(2056)  # 2
+        self.encoder = nn.Sequential(
+            nn.Conv2d(in_channels=1, out_channels=64, kernel_size=(1, 8)),
+            nn.ReLU(),
+            nn.BatchNorm2d(num_features=64),
+            nn.Conv2d(64, 128, (1, 1)),
+            nn.ReLU(),
+            nn.BatchNorm2d(128),
+            nn.Conv2d(128, 256, (1, 1)),
+            nn.ReLU(),
+            nn.BatchNorm2d(256),
+        )
 
-        self.deconv2 = nn.ConvTranspose2d(2056, 64, (1, 1))
-        self.deconv2_bn = nn.BatchNorm2d(64)
-        self.deconv1 = nn.ConvTranspose2d(64, 1, (1, 1))
-        self.deconv1_bn = nn.BatchNorm2d(1)
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(256, 128, (1, 1)),
+            nn.ReLU(),
+            nn.BatchNorm2d(128),
+            nn.ConvTranspose2d(128, 64, (1, 1)),
+            nn.ReLU(),
+            nn.BatchNorm2d(64),
+            nn.ConvTranspose2d(64, 1, (1, 1)),
+            nn.ReLU(),
+            nn.BatchNorm2d(1),
+        )
 
     def forward(self, x):
-        layer1 = self.relu(self.conv1_bn(self.conv1(x)))
-        layer2 = self.relu(self.conv2_bn(self.conv2(layer1)))
-
-        layer3 = self.relu(self.deconv2_bn(self.deconv2(layer2)))
-        layer4 = self.relu(self.deconv1_bn(self.deconv1(layer3)))
-        return layer4
+        encoder = self.encoder(x)
+        decoder = self.decoder(encoder)
+        return decoder
 
 class ConvAutoEncoder_1d(nn.Module):
     def __init__(self):
@@ -200,8 +270,72 @@ class ConvAutoEncoder_1d(nn.Module):
         layer2 = self.relu(self.conv2_bn(self.conv2(layer1)))
 
         layer3 = self.relu(self.deconv2_bn(self.deconv2(layer2)))
-        layer4 = self.relu(self.deconv1_bn(self.deconv1(layer3)))
+        layer4 = self.relu(self.deconv1_bn(self.deconv1(layer3+layer1)))
         return layer4
+
+class ConvAutoEncoder_1d_stride(nn.Module):
+    def __init__(self):
+        # N, 1, 64, 87
+        super(ConvAutoEncoder_1d_stride, self).__init__()
+        self.relu = nn.ReLU()
+        self.conv1 = nn.Conv1d(in_channels=1, out_channels=64, kernel_size=1, stride=2)
+        self.conv1_bn = nn.BatchNorm1d(num_features=64)  # 1
+        self.conv2 = nn.Conv1d(64, 128, 1, 2)
+        self.conv2_bn = nn.BatchNorm1d(128)  # 2
+        self.conv3=nn.Conv1d(128, 256, 1, 2)
+        self.conv3_bn = nn.BatchNorm1d(256)
+
+        self.deconv3=nn.ConvTranspose1d(256, 128, 1, stride=2)
+        self.deconv3_bn = nn.BatchNorm1d(128)
+        self.deconv2 = nn.ConvTranspose1d(128, 64, 1, 2)
+        self.deconv2_bn = nn.BatchNorm1d(64)
+        self.deconv1 = nn.ConvTranspose1d(64, 1, 1, 2)
+        self.deconv1_bn = nn.BatchNorm1d(1)
+
+    def forward(self, x):
+        layer1 = self.relu(self.conv1_bn(self.conv1(x)))
+        layer2 = self.relu(self.conv2_bn(self.conv2(layer1)))
+        layer3 = self.relu(self.conv3_bn(self.conv3(layer2)))
+
+        layer3 = self.relu(self.deconv3_bn(self.deconv3(layer3)))
+        layer4 = self.relu(self.deconv2_bn(self.deconv2(layer3)))
+        layer5 = self.deconv1_bn(self.deconv1(layer4))
+        return layer5
+
+class ConvAutoEncoder_1d_latent(nn.Module):
+    def __init__(self):
+        # N, 1, 64, 87
+        super(ConvAutoEncoder_1d_latent, self).__init__()
+        self.relu = nn.LeakyReLU()
+        self.conv1 = nn.Conv1d(in_channels=1, out_channels=64, kernel_size=1, stride=2)
+        self.conv1_bn = nn.BatchNorm1d(num_features=64)  # 1
+        self.conv2 = nn.Conv1d(64, 128, 1, 2)
+        self.conv2_bn = nn.BatchNorm1d(128)  # 2
+        self.conv3=nn.Conv1d(128, 256, 1, 2)
+        self.conv3_bn = nn.BatchNorm1d(256)
+        self.conv4 = nn.Conv1d(256, 512, 1, 2)
+        self.conv4_bn = nn.BatchNorm1d(512)
+
+        self.deconv4 = nn.ConvTranspose1d(512, 256, 1, stride=2)
+        self.deconv4_bn = nn.BatchNorm1d(256)
+        self.deconv3=nn.ConvTranspose1d(256, 128, 1, 2)
+        self.deconv3_bn = nn.BatchNorm1d(128)
+        self.deconv2 = nn.ConvTranspose1d(128, 64, 1, 2)
+        self.deconv2_bn = nn.BatchNorm1d(64)
+        self.deconv1 = nn.ConvTranspose1d(64, 1, 1, 2)
+        self.deconv1_bn = nn.BatchNorm1d(1)
+
+    def forward(self, x):
+        layer1 = self.relu(self.conv1_bn(self.conv1(x)))
+        layer2 = self.relu(self.conv2_bn(self.conv2(layer1)))
+        layer3 = self.relu(self.conv3_bn(self.conv3(layer2)))
+        layer4 = self.relu(self.conv4_bn(self.conv4(layer3)))
+
+        layer5 = self.relu(self.deconv4_bn(self.deconv4(layer4)))
+        layer6 = self.relu(self.deconv3_bn(self.deconv3(layer5)))
+        layer7 = self.relu(self.deconv2_bn(self.deconv2(layer6)))
+        layer8 = self.deconv1(layer7)
+        return layer8
 
 
 class ConvAutoEncoder_Dense(nn.Module):
