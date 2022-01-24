@@ -80,7 +80,7 @@ def test_sound_quality(config: JsonParser):
 def main(arguments):
     # """Main func."""
     config: JsonParser = JsonParser(
-        '/home/braden/Environments/JayHear/Python_AI/Pytorch_Template/config_files/experiment5.json')
+        '/home/braden/Environments/JayHear/Python_AI/Pytorch_Template/config_files/experiment7.json')
     test_sound_quality(config)
 
 
