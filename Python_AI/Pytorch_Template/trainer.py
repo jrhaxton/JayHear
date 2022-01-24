@@ -12,6 +12,9 @@ from pydoc import locate
 import torch.optim.lr_scheduler
 import soundfile as sf
 import pandas as pd
+from numpy import linalg as LA
+from sklearn.preprocessing import MinMaxScaler
+
 
 import Model
 from JsonParser import JsonParser
@@ -80,32 +83,36 @@ class Trainer:
     def train_multi_frame(self):
         torch.manual_seed(2)
         for epoch in range(self.config.get_epochs()):
+            epoch_loss = 0
             model_to_save = {'state': self.model.state_dict(), 'optimizer': self.optimizer.state_dict()}
-            loop = tqdm(self.data_paths['folders'], leave=False)
+            spectrograms: List[str] = natsorted(os.listdir(self.data_paths['base']))
+            loop = tqdm(spectrograms, leave=False)
             loop.set_description(f'Epoch [{epoch + 1}/{self.config.get_epochs()}]')
-            for folder in loop:
-                spectrograms: List[str] = natsorted(os.listdir(self.data_paths['base'] + folder))
-                for frames in spectrograms:
-                    data: AudioDenoiserDataset = AudioDenoiserDataset(self.data_paths['base'] + folder + '/' + frames)
-                    dataloader: DataLoader = self.config.get_dataloader(data)
-                    for i, (combined, clean) in enumerate(dataloader):
-                        # Data augmentation
-                        combined, clean = combined.to(self.device), clean.to(self.device)
-                        combined = combined[:, 1:, :]  # Had to add a frame to save with numpy so removing the added frame
-                        combined, clean = self.add_channels(combined, clean)
+            for spectrogram in loop:
+                data: AudioDenoiserDataset = AudioDenoiserDataset(self.data_paths['base'] + spectrogram)
+                dataloader: DataLoader = self.config.get_dataloader(data)
+                for i, (combined, clean) in enumerate(dataloader):
+                    # Data augmentation
+                    combined, clean = combined.to(self.device), clean.to(self.device)
+                    combined = combined[:, 1:, :]  # Had to add a frame to save with numpy so removing the added frame
+                    combined, clean = self.add_channels(combined, clean)
 
-                        # forward
-                        decoded = self.model(combined)
-                        _loss = self.loss(decoded, clean)
+                    # forward
+                    decoded = self.model(combined)
+                    _loss = self.loss(decoded, clean)
 
-                        # backward
-                        self.optimizer.zero_grad()
-                        _loss.backward()
-                        self.optimizer.step()
-                        self.lr_scheduler.step()
+                    # backward
+                    self.optimizer.zero_grad()
+                    _loss.backward()
+                    self.optimizer.step()
+                    self.lr_scheduler.step()
 
-                        # tqdm
-                        loop.set_postfix(loss=_loss.item())
+                    # loss
+                    epoch_loss += decoded.shape[0] * _loss.item()
+
+                    # tqdm
+                    loop.set_postfix(loss=_loss.item())
+                print(f'Epoch: {epoch + 1} Loss: {epoch_loss / len(data)}')
             self.save_checkpoint(model_to_save, self.config.get_model_save_path())
 
 
@@ -117,16 +124,22 @@ def main(arguments):
 
     device: torch.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f'Using: {device}')
-    config: JsonParser = JsonParser('config_files/experiment6.json')
+    config: JsonParser = JsonParser('config_files/experiment8.json')
     model: Model = config.get_model(device)
     loss: nn.Loss = config.get_loss()
     optimizer: torch.optim = config.get_optimizer(model)
     lr_scheduler: torch.optim.lr_scheduler = config.get_lr_scheduler(optimizer)
 
     trainer = Trainer(config, model, loss, optimizer, lr_scheduler, data_paths, device)
-    trainer.train_single_frames()
-    # summary(model, (1, 129))#(channels, H, W)
+    trainer.train_multi_frame()
+    # summary(model, (1, 129, 8))#(channels, H, W)
     print('=> Training Finished')
+
+    # decoded=decoded_temp[:, 0, :, :]
+    # decoded=decoded.cpu().detach().numpy()
+    # normalize = MinMaxScaler(feature_range=(-1, 1))
+    # decoded_normalized=[]
+    # decoded_normalized=torch.tensor(np.array([normalize.fit_transform(x) for x in decoded]), requires_grad=True).unsqueeze(dim=1).float().to(self.device)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
