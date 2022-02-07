@@ -10,6 +10,12 @@ import scipy
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 import re
+import math
+from sklearn.preprocessing import StandardScaler
+from scipy import stats
+
+
+
 
 
 class SNR:
@@ -221,6 +227,13 @@ class LogSpectrogram:
         self.extract = extract_files
         self.audio_features = audio_features
 
+    # def normalize_tanh_estimator(self, spectrogram):
+    #     # scalar=StandardScaler(copy=False)
+    #     # scalar.fit(spectrogram)
+    #     # normalized=scalar.transform(spectrogram, copy=True)
+    #     zscore=stats.zscore(spectrogram)
+    #     return zscore
+
     def _remove_silent_frames(self, audio) -> np.array:
         trimed_audio = []
         indices = librosa.effects.split(audio, hop_length=round(0.25 * 256), top_db=20)  # hop_length->256
@@ -242,12 +255,13 @@ class LogSpectrogram:
         # taking abs only keeps the magnitude informations and gets rid of complex numbers and phase
         stft: np.array = librosa.amplitude_to_db(np.abs(librosa.stft(signal, n_fft=256, hop_length=round(256 * 0.25),
                                              win_length=256, window=scipy.signal.hamming(256, sym=False), center=True)))
+        # normalize = MinMaxScaler(feature_range=(-1, 1))
+        # normalized_stft = normalize.fit_transform(stft)
+        scaler = MinMaxScaler(feature_range=(-1, 1))
+        stft=scaler.fit_transform(stft)
         if frames:  # This is added so when we extract the first 8 frames of combined it lands on 1 for clean
             zeros = np.zeros((129, 7))
             stft = np.append(zeros, stft, axis=1)
-        # self.show_spectrogram(stft)
-        normalize = MinMaxScaler(feature_range=(-1, 1))
-        stft=normalize.fit_transform(stft)
         return stft
 
     def multi_framed_logspectrogram(self) -> None:
