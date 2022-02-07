@@ -1,6 +1,6 @@
 {
     "arch": {
-        "type": "ConvAutoEncoder_1st",
+        "type": "ConvAutoEncoder8_lightning",
         "args": {}
     },
     "DataLoader": {
@@ -12,7 +12,7 @@
     "optimizer": {
         "type": "Adam",
         "args":{
-            "lr": 0.001,
+            "lr": 0.1,
             "weight_decay": 0
         }
     },
@@ -20,22 +20,22 @@
     "lr_scheduler": {
         "type": "StepLR",
         "args": {
-            "step_size": 20,
+            "step_size": 10,
             "gamma": 0.1
         }
     },
     "trainer": {
-        "epochs": 300,
+        "epochs": 500,
         "save_dir": "/home/braden/Environments/Research/Audio/Research(Refactored)/Model/"
     },
     "paths": {
-        "model" : "/home/braden/Environments/Research/Audio/Research(Refactored)/Model/state.pt",
+        "model" : "/media/braden/Rage Pro/lightning_logs/version_13/checkpoints/epoch=499-step=6999.ckpt",
         "combined_audio" : "/media/braden/Rage Pro/MS-SNSD/NoisySpeech_testing/noisy4_SNRdb_0.0_clnsp4.wav",
         "clean_audio" : "/media/braden/Rage Pro/MS-SNSD/CleanSpeech_testing/clnsp4.wav",
-        "denoised_audio" : "/media/braden/Rage Pro/Denoised/experiment8.wav"
+        "denoised_audio" : "/media/braden/Rage Pro/Denoised/experiment17.wav"
 
     },
     "spectrograms" : 1,
-    "file_name" : "experiment8.json",
-    "NOTE" : "This epxeriment had shuffle off and it was the first time I tried to use the activation tanh"
+    "file_name" : "experiment17.json",
+    "NOTE" : "Trying lightning"
 }
