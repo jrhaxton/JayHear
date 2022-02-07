@@ -14,15 +14,14 @@ import soundfile as sf
 import pandas as pd
 from numpy import linalg as LA
 from sklearn.preprocessing import MinMaxScaler
-
+from pytorch_lightning import Trainer
 
 import Model
 from JsonParser import JsonParser
 from DataLoader import AudioDenoiserDataset
 
 
-
-class Trainer:
+class Py_Trainer:
     def __init__(self, config, model, loss, optimizer, lr_scheduler, data_paths, device):
         self.config: JsonParser = config
         self.model: Model = model
@@ -46,6 +45,9 @@ class Trainer:
         """
         return combined.unsqueeze(dim=1).float(), clean.unsqueeze(dim=1).float()
 
+    def sdr_loss(self, pred, label):
+        return -(torch.sum(label ** 2) / torch.sum((pred - label) ** 2))
+
     def train_single_frames(self):
         torch.manual_seed(2)
         for epoch in range(self.config.get_epochs()):
@@ -55,7 +57,7 @@ class Trainer:
             loop = tqdm(spectrograms, leave=False)
             loop.set_description(f'Epoch [{epoch + 1}/{self.config.get_epochs()}]')
             for spectrogram in loop:
-                data: AudioDenoiserDataset = AudioDenoiserDataset(self.data_paths['base']+spectrogram)
+                data: AudioDenoiserDataset = AudioDenoiserDataset(self.data_paths['base'] + spectrogram)
                 dataloader: DataLoader = self.config.get_dataloader(data)
                 for i, (combined, clean) in enumerate(dataloader):
                     # Data augmentation
@@ -72,10 +74,10 @@ class Trainer:
                     self.optimizer.step()
                     self.lr_scheduler.step()
 
-                    #loss
+                    # loss
                     epoch_loss += decoded.shape[0] * _loss.item()
 
-                    #tqdm
+                    # tqdm
                     loop.set_postfix(loss=_loss.item())
             print(f'Epoch: {epoch + 1} Loss: {epoch_loss / len(data)}')
             self.save_checkpoint(model_to_save, self.config.get_model_save_path())
@@ -99,6 +101,7 @@ class Trainer:
 
                     # forward
                     decoded = self.model(combined)
+                    # _loss=self.sdr_loss(decoded, clean)
                     _loss = self.loss(decoded, clean)
 
                     # backward
@@ -111,27 +114,42 @@ class Trainer:
                     epoch_loss += decoded.shape[0] * _loss.item()
 
                     # tqdm
-                    loop.set_postfix(loss=_loss.item())
+                    loop.set_postfix(loss=epoch_loss)
                 print(f'Epoch: {epoch + 1} Loss: {epoch_loss / len(data)}')
             self.save_checkpoint(model_to_save, self.config.get_model_save_path())
+
+    def lightning(self):
+        dataset = AudioDenoiserDataset("/media/braden/Rage Pro/Spectrogram/noisy4_SNRdb_0.0_clnsp4")
+        train_loader = DataLoader(dataset=dataset, batch_size=128, shuffle=False, drop_last=False, num_workers=16)
+        # val_loader = DataLoader(dataset=dataset, batch_size=256, shuffle=False, drop_last=False)
+        dir = "/media/braden/Rage Pro"
+
+        #1. Initialize Model
+        model = Model.ConvAutoEncoder8_lightning()
+
+        #2. Initialize Trainer
+        trainer = Trainer(gpus=1, default_root_dir=dir, max_epochs=self.config.get_epochs())
+        trainer.fit(model, train_loader)
 
 
 def main(arguments):
     """Main func."""
     data_paths: Dict[str, List[str]] = {
         'base': "/media/braden/Rage Pro/Spectrogram/",
-        'folders': natsorted(os.listdir("/home/braden/Environments/Research/Audio/Research(Refactored)/Data/training/"))}
+        'folders': natsorted(
+            os.listdir("/home/braden/Environments/Research/Audio/Research(Refactored)/Data/training/"))}
 
     device: torch.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f'Using: {device}')
-    config: JsonParser = JsonParser('config_files/experiment8.json')
+    config: JsonParser = JsonParser('config_files/experiment21.json')
     model: Model = config.get_model(device)
     loss: nn.Loss = config.get_loss()
     optimizer: torch.optim = config.get_optimizer(model)
     lr_scheduler: torch.optim.lr_scheduler = config.get_lr_scheduler(optimizer)
 
-    trainer = Trainer(config, model, loss, optimizer, lr_scheduler, data_paths, device)
-    trainer.train_multi_frame()
+    trainer = Py_Trainer(config, model, loss, optimizer, lr_scheduler, data_paths, device)
+    # trainer.train_multi_frame()
+    trainer.lightning()
     # summary(model, (1, 129, 8))#(channels, H, W)
     print('=> Training Finished')
 
@@ -140,6 +158,7 @@ def main(arguments):
     # normalize = MinMaxScaler(feature_range=(-1, 1))
     # decoded_normalized=[]
     # decoded_normalized=torch.tensor(np.array([normalize.fit_transform(x) for x in decoded]), requires_grad=True).unsqueeze(dim=1).float().to(self.device)
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])
