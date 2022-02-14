@@ -36,7 +36,7 @@ class ConvAutoEncoder8VAE_lightning(pl.LightningModule):
             nn.ConvTranspose2d(1024, 512, (1, 1)),
             nn.ReLU(),
             nn.BatchNorm2d(512),
-            nn.ConvTranspose2d(512, 256, (1, 1),),
+            nn.ConvTranspose2d(512, 256, (1, 1)),
             nn.ReLU(),
             nn.BatchNorm2d(256),
             nn.ConvTranspose2d(256, 128, (1, 1)),
@@ -49,28 +49,42 @@ class ConvAutoEncoder8VAE_lightning(pl.LightningModule):
             nn.Tanh()
         )
 
+    def reparameterize(self, mu, logvar):
+        std = logvar.mul(0.5).exp_()
+        # return torch.normal(mu, std)
+        esp = torch.randn(*mu.size()).to('cuda')
+        z = mu + std * esp
+        return z
+
+    def bottleneck(self, h):
+        mu, logvar = h, h
+        z = self.reparameterize(mu, logvar)
+        return z, mu, logvar
+
     def forward(self, x):
         encoder = self.encoder(x)
-        # mean, var=
-        # self.reparameterize(mean, var)
-        decoder = self.decoder(encoder)
-        return decoder
-
-    def reparameterize(self, mean, var):
-        eps = torch.randn(z_mu.size(0), z_mu.size(1)).to(z_mu.get_device())
-        z = z_mu + eps * torch.exp(z_log_var / 2.)
-        return z
+        z, mu, logvar = self.bottleneck(encoder)
+        decoder = self.decoder(z)
+        return decoder, mu, logvar
 
     def add_channels(self, combined, clean):
         return combined.unsqueeze(dim=1).float(), clean.unsqueeze(dim=1).float()
+
+    def loss_vae(self, recon_x, x, mu, logvar):
+        BCE=F.binary_cross_entropy(recon_x, x, size_average=False)
+
+        # see Appendix B from VAE paper:
+        # Kingma and Welling. Auto-Encoding Variational Bayes. ICLR, 2014
+        # 0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
+        KLD = -0.5 * torch.sum(1 + logvar - mu ** 2 - logvar.exp())
+        return BCE + KLD
 
     def training_step(self, batch, batch_idx):
         combined, clean = batch
         combined = combined[:, 1:, :]
         combined, clean = self.add_channels(combined, clean)
-        output = self(combined)
-        loss = F.l1_loss(output, clean)
-        # loss=F.mse_loss(output, clean)
+        output, mu, logvar = self(combined)
+        loss = self.loss_vae(output, clean, mu, logvar)
         self.log('train_loss', loss)
         return loss
 
@@ -79,7 +93,7 @@ class ConvAutoEncoder8VAE_lightning(pl.LightningModule):
         combined = combined[:, 1:, :]
         combined, clean = self.add_channels(combined, clean)
         output = self(combined)
-        loss = F.mse_loss(output, clean)
+        loss = F.l1_loss(output, clean)
         self.log('val_loss', loss)
 
     def test_step(self, batch, batch_idx):
@@ -87,11 +101,12 @@ class ConvAutoEncoder8VAE_lightning(pl.LightningModule):
         combined = combined[:, 1:, :]
         combined, clean = self.add_channels(combined, clean)
         output = self(combined)
-        loss = F.mse_loss(output, clean)
+        loss = F.l1_loss(output, clean)
         self.log('test_loss', loss)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, weight_decay=1e-6, amsgrad=False)#weight_decay=1e-6
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, weight_decay=1e-6,
+                                     amsgrad=False)  # weight_decay=1e-6
         return {
             "optimizer": optimizer,
             "lr_scheduler": {
@@ -99,11 +114,62 @@ class ConvAutoEncoder8VAE_lightning(pl.LightningModule):
             },
         }
 
+
 class ConvAutoEncoder8_lightning(pl.LightningModule):
     def __init__(self):
         # N, 1, 64, 87
         super(ConvAutoEncoder8_lightning, self).__init__()
         self.learning_rate = 0.001
+        # self.block1=nn.Sequential(
+        #     nn.Conv2d(in_channels=1, out_channels=64, kernel_size=(1, 8)),
+        #     nn.ReLU(),
+        #     nn.BatchNorm2d(num_features=64),
+        # )
+        # self.block2 = nn.Sequential(
+        #     nn.Conv2d(64, 128, (1, 1)),
+        #     nn.ReLU(),
+        #     nn.BatchNorm2d(128),
+        # )
+        # self.block3 = nn.Sequential(
+        #     nn.Conv2d(128, 256, (1, 1)),
+        #     nn.ReLU(),
+        #     nn.BatchNorm2d(256),
+        # )
+        # self.block4 = nn.Sequential(
+        #     nn.Conv2d(256, 512, (1, 1)),
+        #     nn.ReLU(),
+        #     nn.BatchNorm2d(512),
+        # )
+        # self.block5 = nn.Sequential(
+        #     nn.Conv2d(512, 1024, (1, 1)),
+        #     nn.ReLU(),
+        #     nn.BatchNorm2d(1024),
+        # )
+        # self.unblock5 = nn.Sequential(
+        #     nn.ConvTranspose2d(1024, 512, (1, 1)),
+        #     nn.ReLU(),
+        #     nn.BatchNorm2d(512),
+        # )
+        # self.unblock4 = nn.Sequential(
+        #     nn.ConvTranspose2d(512, 256, (1, 1)),
+        #     nn.ReLU(),
+        #     nn.BatchNorm2d(256),
+        # )
+        # self.unblock3 = nn.Sequential(
+        #     nn.ConvTranspose2d(256, 128, (1, 1)),
+        #     nn.ReLU(),
+        #     nn.BatchNorm2d(128),
+        # )
+        # self.unblock2 = nn.Sequential(
+        #     nn.ConvTranspose2d(128, 64, (1, 1)),
+        #     nn.ReLU(),
+        #     nn.BatchNorm2d(64),
+        # )
+        # self.unblock1 = nn.Sequential(
+        #     nn.ConvTranspose2d(64, 1, (1, 1)),
+        #     nn.Tanh()
+        # )
+
         self.encoder = nn.Sequential(
             nn.Conv2d(in_channels=1, out_channels=64, kernel_size=(1, 8)),
             nn.ReLU(),
@@ -120,19 +186,13 @@ class ConvAutoEncoder8_lightning(pl.LightningModule):
             nn.Conv2d(512, 1024, (1, 1)),
             nn.ReLU(),
             nn.BatchNorm2d(1024),
-            nn.Conv2d(1024, 2048, (1, 1)),
-            nn.ReLU(),
-            nn.BatchNorm2d(2048),
         )
 
         self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(2048, 1024, (1, 1)),
-            nn.ReLU(),
-            nn.BatchNorm2d(1024),
             nn.ConvTranspose2d(1024, 512, (1, 1)),
             nn.ReLU(),
             nn.BatchNorm2d(512),
-            nn.ConvTranspose2d(512, 256, (1, 1),),
+            nn.ConvTranspose2d(512, 256, (1, 1)),
             nn.ReLU(),
             nn.BatchNorm2d(256),
             nn.ConvTranspose2d(256, 128, (1, 1)),
@@ -146,6 +206,17 @@ class ConvAutoEncoder8_lightning(pl.LightningModule):
         )
 
     def forward(self, x):
+        # block1 = self.block1(x)
+        # block2 = self.block2(block1)
+        # block3 = self.block3(block2)
+        # block4 = self.block4(block3)
+        # block5 = self.block5(block4)
+        #
+        # unblock5 = self.unblock5(block5)
+        # unblock4 = self.unblock4(unblock5 + block4)
+        # unblock3 = self.unblock3(unblock4)
+        # unblock2 = self.unblock2(unblock3 + block2)
+        # unblock1 = self.unblock1(unblock2)
         encoder = self.encoder(x)
         decoder = self.decoder(encoder)
         return decoder
@@ -180,11 +251,12 @@ class ConvAutoEncoder8_lightning(pl.LightningModule):
         self.log('test_loss', loss)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, weight_decay=1e-6, amsgrad=True)#weight_decay=1e-6
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, weight_decay=1e-6,
+                                     amsgrad=True)  # weight_decay=1e-6
         return {
             "optimizer": optimizer,
             "lr_scheduler": {
-                "scheduler": torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', cooldown=2),
+                "scheduler": torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=2),
                 "monitor": "train_loss"
             },
         }
@@ -203,6 +275,7 @@ class ConvAutoEncoder8_lightning(pl.LightningModule):
     #         "monitor": "train_loss"
     #     },
     # }
+
 
 class ConvAutoEncoder1_lightning(pl.LightningModule):
     def __init__(self):
@@ -257,7 +330,7 @@ class ConvAutoEncoder1_lightning(pl.LightningModule):
         combined, clean = self.add_channels(combined, clean)
         output = self(combined)
         # loss = F.l1_loss(output, clean)
-        loss=F.mse_loss(output, clean)
+        loss = F.mse_loss(output, clean)
         self.log('train_loss', loss)
         return loss
 
@@ -276,7 +349,7 @@ class ConvAutoEncoder1_lightning(pl.LightningModule):
         self.log('test_loss', loss)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)#weight_decay=1e-6
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)  # weight_decay=1e-6
         return {
             "optimizer": optimizer,
             "lr_scheduler": {
@@ -284,10 +357,21 @@ class ConvAutoEncoder1_lightning(pl.LightningModule):
             },
         }
 
-class ConvAutoEncoder_1st(nn.Module):
+
+class Flatten(nn.Module):
+    def forward(self, input):
+        return input.view(input.size(0), -1)
+
+
+class UnFlatten(nn.Module):
+    def forward(self, input, size=1024):
+        return input.view(input.size(0), size, 1, 1)
+
+
+class ConvAutoEncoder_Dense(nn.Module):
     def __init__(self, h_dim=1024, z_dim=32):
         # N, 1, 64, 87
-        super(ConvAutoEncoder_1st, self).__init__()
+        super(ConvAutoEncoder_Dense, self).__init__()
         self.encoder = nn.Sequential(
             nn.Conv2d(in_channels=1, out_channels=64, kernel_size=(1, 8)),
             nn.ReLU(),
@@ -314,7 +398,7 @@ class ConvAutoEncoder_1st(nn.Module):
             nn.ConvTranspose2d(1024, 512, (1, 1)),
             nn.ReLU(),
             nn.BatchNorm2d(512),
-            nn.ConvTranspose2d(512, 256, (1, 1), ),
+            nn.ConvTranspose2d(512, 256, (1, 1)),
             nn.ReLU(),
             nn.BatchNorm2d(256),
             nn.ConvTranspose2d(256, 128, (1, 1)),
@@ -327,155 +411,30 @@ class ConvAutoEncoder_1st(nn.Module):
             nn.Tanh()
         )
 
+        # self.linear1 = nn.Linear(66048, 2)
+        #
+        # self.linear2 = nn.Linear(2, 66048)
+
+    def reparameterize(self, mu, logvar):
+        std = logvar.mul(0.5).exp_()
+        # return torch.normal(mu, std)
+        esp = torch.randn(*mu.size()).to('cuda')
+        z = mu + std * esp
+        return z
+
+    def bottleneck(self, h):
+        mu, logvar = h, h
+        z = self.reparameterize(mu, logvar)
+        return z, mu, logvar
+
     def forward(self, x):
         encoder = self.encoder(x)
-        decoder = self.decoder(encoder)
-        return decoder
+        z, mu, logvar = self.bottleneck(encoder)
+        decoder=self.decoder(z)
+        return decoder, mu, logvar
 
-class ConvAutoEncoder_1d(nn.Module):
-    def __init__(self):
-        # N, 1, 64, 87
-        super(ConvAutoEncoder_1d, self).__init__()
-        self.relu = nn.ReLU()
-        self.conv1 = nn.Conv1d(in_channels=1, out_channels=64, kernel_size=1)
-        self.conv1_bn = nn.BatchNorm1d(num_features=64)  # 1
-        self.conv2 = nn.Conv1d(64, 128, 1)
-        self.conv2_bn = nn.BatchNorm1d(128)  # 2
-
-        self.deconv2 = nn.ConvTranspose1d(128, 64, 1)
-        self.deconv2_bn = nn.BatchNorm1d(64)
-        self.deconv1 = nn.ConvTranspose1d(64, 1, 1)
-        self.deconv1_bn = nn.BatchNorm1d(1)
-
-    def forward(self, x):
-        layer1 = self.relu(self.conv1_bn(self.conv1(x)))
-        layer2 = self.relu(self.conv2_bn(self.conv2(layer1)))
-
-        layer3 = self.relu(self.deconv2_bn(self.deconv2(layer2)))
-        layer4 = self.relu(self.deconv1_bn(self.deconv1(layer3+layer1)))
-        return layer4
-
-class ConvAutoEncoder_1d_stride(nn.Module):
-    def __init__(self):
-        # N, 1, 64, 87
-        super(ConvAutoEncoder_1d_stride, self).__init__()
-        self.relu = nn.ReLU()
-        self.conv1 = nn.Conv1d(in_channels=1, out_channels=64, kernel_size=1, stride=2)
-        self.conv1_bn = nn.BatchNorm1d(num_features=64)  # 1
-        self.conv2 = nn.Conv1d(64, 128, 1, 2)
-        self.conv2_bn = nn.BatchNorm1d(128)  # 2
-        self.conv3=nn.Conv1d(128, 256, 1, 2)
-        self.conv3_bn = nn.BatchNorm1d(256)
-
-        self.deconv3=nn.ConvTranspose1d(256, 128, 1, stride=2)
-        self.deconv3_bn = nn.BatchNorm1d(128)
-        self.deconv2 = nn.ConvTranspose1d(128, 64, 1, 2)
-        self.deconv2_bn = nn.BatchNorm1d(64)
-        self.deconv1 = nn.ConvTranspose1d(64, 1, 1, 2)
-        self.deconv1_bn = nn.BatchNorm1d(1)
-
-    def forward(self, x):
-        layer1 = self.relu(self.conv1_bn(self.conv1(x)))
-        layer2 = self.relu(self.conv2_bn(self.conv2(layer1)))
-        layer3 = self.relu(self.conv3_bn(self.conv3(layer2)))
-
-        layer3 = self.relu(self.deconv3_bn(self.deconv3(layer3)))
-        layer4 = self.relu(self.deconv2_bn(self.deconv2(layer3)))
-        layer5 = self.deconv1_bn(self.deconv1(layer4))
-        return layer5
-
-class ConvAutoEncoder_1d_latent(nn.Module):
-    def __init__(self):
-        # N, 1, 64, 87
-        super(ConvAutoEncoder_1d_latent, self).__init__()
-        self.relu = nn.LeakyReLU()
-        self.conv1 = nn.Conv1d(in_channels=1, out_channels=64, kernel_size=1, stride=2)
-        self.conv1_bn = nn.BatchNorm1d(num_features=64)  # 1
-        self.conv2 = nn.Conv1d(64, 128, 1, 2)
-        self.conv2_bn = nn.BatchNorm1d(128)  # 2
-        self.conv3=nn.Conv1d(128, 256, 1, 2)
-        self.conv3_bn = nn.BatchNorm1d(256)
-        self.conv4 = nn.Conv1d(256, 512, 1, 2)
-        self.conv4_bn = nn.BatchNorm1d(512)
-
-        self.deconv4 = nn.ConvTranspose1d(512, 256, 1, stride=2)
-        self.deconv4_bn = nn.BatchNorm1d(256)
-        self.deconv3=nn.ConvTranspose1d(256, 128, 1, 2)
-        self.deconv3_bn = nn.BatchNorm1d(128)
-        self.deconv2 = nn.ConvTranspose1d(128, 64, 1, 2)
-        self.deconv2_bn = nn.BatchNorm1d(64)
-        self.deconv1 = nn.ConvTranspose1d(64, 1, 1, 2)
-        self.deconv1_bn = nn.BatchNorm1d(1)
-
-    def forward(self, x):
-        layer1 = self.relu(self.conv1_bn(self.conv1(x)))
-        layer2 = self.relu(self.conv2_bn(self.conv2(layer1)))
-        layer3 = self.relu(self.conv3_bn(self.conv3(layer2)))
-        layer4 = self.relu(self.conv4_bn(self.conv4(layer3)))
-
-        layer5 = self.relu(self.deconv4_bn(self.deconv4(layer4)))
-        layer6 = self.relu(self.deconv3_bn(self.deconv3(layer5)))
-        layer7 = self.relu(self.deconv2_bn(self.deconv2(layer6)))
-        layer8 = self.deconv1(layer7)
-        return layer8
-
-
-class ConvAutoEncoder_Dense(nn.Module):
-    def __init__(self):
-        # N, 1, 64, 87
-        super(ConvAutoEncoder_Dense, self).__init__()
-        self.relu = nn.ReLU()
-        self.conv1 = nn.Conv2d(in_channels=1, out_channels=8, kernel_size=(1, 8))
-        self.conv1_bn = nn.BatchNorm2d(num_features=8)  # 1
-        self.conv2 = nn.Conv2d(8, 16, (1, 1))
-        self.conv2_bn = nn.BatchNorm2d(16)  # 2
-        self.conv3 = nn.Conv2d(16, 32, (1, 1))
-        self.conv3_bn = nn.BatchNorm2d(32)  # 3
-        self.conv4 = nn.Conv2d(32, 64, (1, 1))
-        self.conv4_bn = nn.BatchNorm2d(64)  # 4
-        self.conv5 = nn.Conv2d(64, 128, (1, 1))
-        self.conv5_bn = nn.BatchNorm2d(128)  # 5
-        self.conv6 = nn.Conv2d(128, 256, (1, 1))
-        self.conv6_bn = nn.BatchNorm2d(256)  # 6
-        self.linear1 = nn.Linear(4194304, 2)
-
-        self.linear2 = nn.Linear(2, 4194304)
-        self.deconv6 = nn.ConvTranspose2d(256, 128, (1, 1))
-        self.deconv6_bn = nn.BatchNorm2d(128)
-        self.deconv5 = nn.ConvTranspose2d(128, 64, (1, 1))
-        self.deconv5_bn = nn.BatchNorm2d(64)
-        self.deconv4 = nn.ConvTranspose2d(64, 32, (1, 1))
-        self.deconv4_bn = nn.BatchNorm2d(32)
-        self.deconv3 = nn.ConvTranspose2d(32, 16, (1, 1))
-        self.deconv3_bn = nn.BatchNorm2d(16)
-        self.deconv2 = nn.ConvTranspose2d(16, 8, (1, 1))
-        self.deconv2_bn = nn.BatchNorm2d(8)
-        self.deconv1 = nn.ConvTranspose2d(8, 1, (1, 1))
-        self.deconv1_bn = nn.BatchNorm2d(1)
-
-    def forward(self, x):
-        x1 = self.relu(self.conv1_bn(self.conv1(x)))
-        x2 = self.relu(self.conv2_bn(self.conv2(x1)))
-        x3 = self.relu(self.conv3_bn(self.conv3(x2)))
-        x4 = self.relu(self.conv4_bn(self.conv4(x3)))
-        x5 = self.relu(self.conv5_bn(self.conv5(x4)))
-        x6 = self.relu(self.conv6_bn(self.conv6(x5)))
-        flatten = torch.flatten(x6)
-        linear1 = self.linear1(flatten)
-
-        linear2 = self.linear2(linear1)
-        unflatten = linear2.view(x6.shape)
-        x7 = self.relu(self.deconv6_bn(self.deconv6(unflatten)))
-        skip1 = x5 + x7
-        x8 = self.relu(self.deconv5_bn(self.deconv5(skip1)))
-        x9 = self.relu(self.deconv4_bn(self.deconv4(x8)))
-        skip2 = x3 + x9
-        x10 = self.relu(self.deconv3_bn(self.deconv3(skip2)))
-        x11 = self.relu(self.deconv2_bn(self.deconv2(x10)))
-        skip3 = x1 + x11
-        x12 = self.relu(self.deconv1_bn(self.deconv1(skip3)))
-        return x12
-    # flatten=4194304
-    # unflatten=2, 256, 128, 1
-    # x5=128, 128, 128, 1
-    # x7=2, 128, 128, 1
+        # flatten = torch.flatten(x6)
+        # linear1 = self.linear1(flatten)
+        #
+        # linear2 = self.linear2(linear1)
+        # unflatten = linear2.view(x6.shape)

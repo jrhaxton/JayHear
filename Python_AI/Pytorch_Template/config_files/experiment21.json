@@ -29,7 +29,7 @@
         "save_dir": "/home/braden/Environments/Research/Audio/Research(Refactored)/Model/"
     },
     "paths": {
-        "model" : "/media/braden/Rage Pro/lightning_logs/version_42/checkpoints/epoch=2-step=41.ckpt",
+        "model" : "/media/braden/Rage Pro/lightning_logs/version_39/checkpoints/epoch=99-step=699.ckpt",
         "combined_audio" : "/media/braden/Rage Pro/MS-SNSD/NoisySpeech_testing/noisy4_SNRdb_0.0_clnsp4.wav",
         "clean_audio" : "/media/braden/Rage Pro/MS-SNSD/CleanSpeech_testing/clnsp4.wav",
         "denoised_audio" : "/media/braden/Rage Pro/Denoised/experiment21.wav"
@@ -37,5 +37,5 @@
     },
     "spectrograms" : 1,
     "file_name" : "experiment21.json",
-    "NOTE" : "Same as 19 and 20 just added 2 extra layers"
+    "NOTE" : "Same as 19 and 20 but added the phase scaling at the end"
 }

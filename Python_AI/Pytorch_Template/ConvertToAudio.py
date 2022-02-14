@@ -1,3 +1,4 @@
+import math
 import sys
 import numpy as np
 import librosa
@@ -12,6 +13,7 @@ from DataLoader import AudioDenoiserDataset
 from torch.utils.data import DataLoader
 from sklearn.preprocessing import StandardScaler
 from JsonParser import JsonParser
+import math
 
 
 class ConvertToAudio:
@@ -65,7 +67,10 @@ class ConvertToAudio:
                                          window=self.window, center=True)
         else:
             self.modeled_audio = self.denormalize(self.modeled_audio)
-            clean_signal = librosa.istft(librosa.db_to_amplitude(self.modeled_audio), hop_length=round(256 * 0.25),
+            self.modeled_audio=librosa.db_to_amplitude(self.modeled_audio)
+            self.modeled_audio=np.squeeze(self.modeled_audio)
+            self.modeled_audio=self.modeled_audio*np.exp(1j*self.noisy_phase)
+            clean_signal = librosa.istft(self.modeled_audio, hop_length=round(256 * 0.25),
                                          win_length=256,
                                          window=self.window, center=True)
         # print(f'Denoised shape: {clean_signal.shape}')
@@ -116,7 +121,7 @@ class ConvertToAudio:
         #     print('worked')
 
     def create_batch(self, spec):
-        dataset = AudioDenoiserDataset("/media/braden/Rage Pro/Spectrogram/noisy4_SNRdb_0.0_clnsp4")
+        dataset = AudioDenoiserDataset("/home/braden/Environments/Spectrograms/noisy2221_SNRdb_0.0_clnsp2221")
         train_loader = DataLoader(dataset=dataset, batch_size=256, shuffle=False, drop_last=False, num_workers=16)
         batch=[]
         for i, (combined, clean) in enumerate(train_loader):
@@ -158,14 +163,14 @@ class ConvertToAudio:
         return audio
 
     def to_log_spectrogram(self):
-        noisy_signal, sr = librosa.load(path=self.combined_audio, sr=16000, dtype='double')
+        noisy_signal, sr = librosa.load(path=self.combined_audio, sr=8000, dtype='double')
         self.noisy_log_spec = librosa.stft(noisy_signal, n_fft=256, hop_length=round(256 * 0.25), win_length=256,
                                            window=self.window, center=True)
         self.noisy_phase = np.angle(self.noisy_log_spec)
         self.temp = librosa.amplitude_to_db(np.abs(self.noisy_log_spec), ref=np.max)
         self.noisy_log_spec = self.adjust_shape(librosa.amplitude_to_db(np.abs(self.noisy_log_spec)))
 
-        clean_signal, sr = librosa.load(self.clean_audio, 16000, dtype='double')
+        clean_signal, sr = librosa.load(self.clean_audio, 8000, dtype='double')
         self.clean_log_spec = librosa.stft(clean_signal, n_fft=256, hop_length=round(256 * 0.25), win_length=256,
                                            window=self.window, center=True)
         self.clean_temp=librosa.amplitude_to_db(np.abs(self.clean_log_spec))
@@ -199,7 +204,7 @@ def denoise_audio_files(config: JsonParser, device: torch.device):
     convert.feed_multi_into_model()
     clean_audio = convert.apply_griffin(phase_scale=False)
     convert.show_spectrogram(clean_audio, config.get_experiment_name())
-    sf.write(config.get_denoised_audio(), clean_audio, 16000, 'PCM_24')
+    sf.write(config.get_denoised_audio(), clean_audio, 8000, 'PCM_24')
     print('=> Denoising Audio Complete')
 
 
@@ -207,7 +212,7 @@ def main(arguments):
     """Main func."""
     device: torch.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     config: JsonParser = JsonParser(
-        '/home/braden/Environments/JayHear/Python_AI/Pytorch_Template/config_files/experiment20.json')
+        '/home/braden/Environments/JayHear/Python_AI/Pytorch_Template/config_files/experiment24.json')
     denoise_audio_files(config, device)
 
 

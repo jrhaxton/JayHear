@@ -13,6 +13,7 @@ import re
 import math
 from sklearn.preprocessing import StandardScaler
 from scipy import stats
+import shutil
 
 
 
@@ -303,10 +304,34 @@ class LogSpectrogram:
                 print(e, exc_tb.tb_lineno)
         print("Saving List...")
 
+class Unpack:
+    def __init__(self, dir, export_to, count):
+        # self.urbanSoundAudioPaths=natsorted(os.listdir(urbanSoundAudioPaths))
+        self.dir=natsorted(os.listdir(dir))
+        self.dir_base=dir
+        self.export_to=export_to
+        self.count=count
+
+    def process_audio(self):
+        for i, folder in enumerate(self.dir):
+            print(f'Unpacking folder {i}')
+            if i==self.count:
+                break
+            for file in natsorted(os.listdir(self.dir_base+folder)):
+                try:
+                    shutil.move(self.dir_base+folder+'/'+file, self.export_to)
+                except:
+                    print('Error')
+            shutil.rmtree(self.dir_base+folder)
+
+
+    def run(self):
+        self.process_audio()
+
 
 def main(arguments):
     """Main func."""
-    audio_features: Dict[str, str] = {'frame_rate': 16000, 'channels': 1}
+    audio_features: Dict[str, str] = {'frame_rate': 8000, 'channels': 1}
 
     # source: str="/home/braden/Environments/Research/Audio/Research(Refactored)/Data/Mozilla_MP3"
     # files: List[str]=os.listdir(source)
@@ -323,12 +348,18 @@ def main(arguments):
     # start: CombineAudio = CombineAudio(Clean_folder, Background_folder, Combined_folder, snr, audio_features)
     # start.run()
 
-    source_clean: str = "/media/braden/Rage Pro/MS-SNSD/CleanSpeech_testing"
-    source_combined: str = "/media/braden/Rage Pro/MS-SNSD/NoisySpeech_testing"
-    export_to: str = "/media/braden/Rage Pro/Spectrogram"
+    source_clean: str = "/home/braden/Environments/clean_temp"
+    source_combined: str = "/home/braden/Environments/noise_temp"
+    export_to: str = "/home/braden/Environments/Spectrograms"
     extract_files: Extract_Files = Extract_Files()
     test: LogSpectrogram = LogSpectrogram(source_clean, source_combined, export_to, extract_files, audio_features)
     test.multi_framed_logspectrogram()
+
+    # dir="/home/braden/Environments/Spectrograms/"
+    # export_to="/home/braden/Environments/data/clean"
+    # count=420
+    # unpack=Unpack(dir, export_to, count)
+    # unpack.run()
 
 
 if __name__ == "__main__":

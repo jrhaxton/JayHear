@@ -82,41 +82,50 @@ class Py_Trainer:
             print(f'Epoch: {epoch + 1} Loss: {epoch_loss / len(data)}')
             self.save_checkpoint(model_to_save, self.config.get_model_save_path())
 
+    def loss_vae(self, recon_x, x, mu, logvar):
+        BCE=F.binary_cross_entropy(recon_x, x, size_average=False)
+
+        # see Appendix B from VAE paper:
+        # Kingma and Welling. Auto-Encoding Variational Bayes. ICLR, 2014
+        # 0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
+        KLD = -0.5 * torch.sum(1 + logvar - mu ** 2 - logvar.exp())
+        return BCE + KLD
+
     def train_multi_frame(self):
         torch.manual_seed(2)
         for epoch in range(self.config.get_epochs()):
-            epoch_loss = 0
-            model_to_save = {'state': self.model.state_dict(), 'optimizer': self.optimizer.state_dict()}
-            spectrograms: List[str] = natsorted(os.listdir(self.data_paths['base']))
-            loop = tqdm(spectrograms, leave=False)
-            loop.set_description(f'Epoch [{epoch + 1}/{self.config.get_epochs()}]')
-            for spectrogram in loop:
-                data: AudioDenoiserDataset = AudioDenoiserDataset(self.data_paths['base'] + spectrogram)
-                dataloader: DataLoader = self.config.get_dataloader(data)
-                for i, (combined, clean) in enumerate(dataloader):
-                    # Data augmentation
-                    combined, clean = combined.to(self.device), clean.to(self.device)
-                    combined = combined[:, 1:, :]  # Had to add a frame to save with numpy so removing the added frame
-                    combined, clean = self.add_channels(combined, clean)
+            # epoch_loss = 0
+            # model_to_save = {'state': self.model.state_dict(), 'optimizer': self.optimizer.state_dict()}
+            # spectrograms: List[str] = natsorted(os.listdir(self.data_paths['base']))
+            # loop = tqdm(spectrograms, leave=False)
+            # loop.set_description(f'Epoch [{epoch + 1}/{self.config.get_epochs()}]')
+            # for spectrogram in loop:
+            data: AudioDenoiserDataset = AudioDenoiserDataset("/media/braden/Rage Pro/Spectrogram/noisy4_SNRdb_0.0_clnsp4")
+            dataloader: DataLoader = self.config.get_dataloader(data)
+            for i, (combined, clean) in enumerate(dataloader):
+                # Data augmentation
+                combined, clean = combined.to(self.device), clean.to(self.device)
+                combined = combined[:, 1:, :]  # Had to add a frame to save with numpy so removing the added frame
+                combined, clean = self.add_channels(combined, clean)
 
-                    # forward
-                    decoded = self.model(combined)
-                    # _loss=self.sdr_loss(decoded, clean)
-                    _loss = self.loss(decoded, clean)
+                # forward
+                recon_images, mu, logvar = self.model(combined)
+                # _loss=self.sdr_loss(decoded, clean)
+                _loss = self.loss_vae(recon_images, clean, mu, logvar)
 
-                    # backward
-                    self.optimizer.zero_grad()
-                    _loss.backward()
-                    self.optimizer.step()
-                    self.lr_scheduler.step()
+                # backward
+                self.optimizer.zero_grad()
+                _loss.backward()
+                self.optimizer.step()
+                self.lr_scheduler.step()
 
-                    # loss
-                    epoch_loss += decoded.shape[0] * _loss.item()
+                # loss
+                epoch_loss += decoded.shape[0] * _loss.item()
 
-                    # tqdm
-                    loop.set_postfix(loss=epoch_loss)
-                print(f'Epoch: {epoch + 1} Loss: {epoch_loss / len(data)}')
-            self.save_checkpoint(model_to_save, self.config.get_model_save_path())
+                # tqdm
+                loop.set_postfix(loss=epoch_loss)
+            print(f'Epoch: {epoch + 1} Loss: {epoch_loss / len(data)}')
+        self.save_checkpoint(model_to_save, self.config.get_model_save_path())
 
     def lightning(self):
         dataset = AudioDenoiserDataset("/media/braden/Rage Pro/Spectrogram/noisy4_SNRdb_0.0_clnsp4")
@@ -125,7 +134,7 @@ class Py_Trainer:
         dir = "/media/braden/Rage Pro"
 
         #1. Initialize Model
-        model = Model.ConvAutoEncoder8_lightning()
+        model = Model.ConvAutoEncoder8VAE_lightning()
 
         #2. Initialize Trainer
         trainer = Trainer(gpus=1, default_root_dir=dir, max_epochs=self.config.get_epochs())
@@ -141,7 +150,7 @@ def main(arguments):
 
     device: torch.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f'Using: {device}')
-    config: JsonParser = JsonParser('config_files/experiment21.json')
+    config: JsonParser = JsonParser('config_files/experiment23.json')
     model: Model = config.get_model(device)
     loss: nn.Loss = config.get_loss()
     optimizer: torch.optim = config.get_optimizer(model)
