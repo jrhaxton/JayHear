@@ -9,5 +9,170 @@
 </head>
 <body>
   <app-root></app-root>
+  <canvas id="J_dotLine"></canvas>
+  <script>
+      function Dotline(option) {
+          this.opt = this.extend({
+              dom: 'J_dotLine',//canvas id
+              cw: 2000,//canvas width
+              ch: 1000,//canvas height
+              ds: 120,//number of points
+              r: 0.5,//Dot radius
+              cl: '#000',//color
+              dis: 100//Distance to trigger connection
+          }, option);
+          this.c = document.getElementById(this.opt.dom);//canvas element id
+          this.ctx = this.c.getContext('2d');
+          this.c.width = this.opt.cw;//canvas width
+          this.c.height = this.opt.ch;//canvas height
+          this.dotSum = this.opt.ds;//number of points
+          this.radius = this.opt.r;//the radius of the dot
+          this.disMax = this.opt.dis * this.opt.dis;//Point-to-point trigger line spacing
+          this.color = this.color2rgb(this.opt.cl);//Set particle line color
+          this.dots = [];
+          //requestAnimationFrame controls canvas animation
+          var RAF = window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function (callback) {
+              window.setTimeout(callback, 1000 / 60);
+          };
+          var _self = this;
+          //add mouse effect
+          var mousedot = { x: null, y: null, label: 'mouse' };
+          this.c.onmousemove = function (e) {
+              var e = e || window.event;
+              mousedot.x = e.clientX - _self.c.offsetLeft;
+              mousedot.y = e.clientY - _self.c.offsetTop;
+          };
+          this.c.onmouseout = function (e) {
+              mousedot.x = null;
+              mousedot.y = null;
+          }
+          //control animation
+          this.animate = function () {
+              _self.ctx.clearRect(0, 0, _self.c.width, _self.c.height);
+              _self.drawLine([mousedot].concat(_self.dots));
+              RAF(_self.animate);
+          };
+      }
+
+      //Merge configuration items, es6 uses obj.assign() directly;
+      Dotline.prototype.extend = function (o, e) {
+          for (var key in e) {
+              if (e[key]) {
+                  o[key] = e[key]
+              }
+          }
+          return o;
+      };
+
+      Dotline.prototype.color2rgb = function (colorStr) {
+          var red = null,
+              green = null,
+              blue = null;
+          var cstr = colorStr.toLowerCase();//lowercase
+          var cReg = /^#[0-9a-fA-F]{3,6}$/;//Make sure it's a hexadecimal color code
+          if (cstr && cReg.test(cstr)) {
+              if (cstr.length == 4) {
+                  var cstrnew = '#';
+                  for (var i = 1; i < 4; i++) {
+                      cstrnew += cstr.slice(i, i + 1).concat(cstr.slice(i, i + 1));
+                  }
+                  cstr = cstrnew;
+              }
+              red = parseInt('0x' + cstr.slice(1, 3));
+              green = parseInt('0x' + cstr.slice(3, 5));
+              blue = parseInt('0x' + cstr.slice(5, 7));
+          }
+          return red + ',' + green + ',' + blue;
+      }
+
+      //draw dots
+      Dotline.prototype.addDots = function () {
+          var dot;
+          for (var i = 0; i < this.dotSum; i++) {//parameter
+              dot = {
+                  x: Math.floor(Math.random() * this.c.width) - this.radius,
+                  y: Math.floor(Math.random() * this.c.height) - this.radius,
+                  ax: (Math.random() * 2 - 1) / 1.5,
+                  ay: (Math.random() * 2 - 1) / 1.5
+              }
+              this.dots.push(dot);
+          }
+      };
+
+      //point movement
+      Dotline.prototype.move = function (dot) {
+          dot.x += dot.ax;
+          dot.y += dot.ay;
+          //return when the point hits the edge
+          dot.ax *= (dot.x > (this.c.width - this.radius) || dot.x < this.radius) ? -1 : 1;
+          dot.ay *= (dot.y > (this.c.height - this.radius) || dot.y < this.radius) ? -1 : 1;
+          //draw points
+          this.ctx.beginPath();
+          this.ctx.arc(dot.x, dot.y, this.radius, 0, Math.PI * 2, true);
+          this.ctx.stroke();
+      };
+
+      //draw line between points
+      Dotline.prototype.drawLine = function (dots) {
+          var nowDot;
+          var _that = this;
+          //traverse all the points twice, compare the distance between the points, and put the trigger of the function in animate
+          this.dots.forEach(function (dot) {
+
+              _that.move(dot);
+              for (var j = 0; j < dots.length; j++) {
+                  nowDot = dots[j];
+                  if (nowDot === dot || nowDot.x === null || nowDot.y === null) continue;//continue to jump out of the current loop and start a new loop
+                  var dx = dot.x - nowDot.x,//Other point coordinates minus current point coordinates
+                      dy = dot.y - nowDot.y;
+                  var dc = dx * dx + dy * dy;
+                  if (Math.sqrt(dc) > Math.sqrt(_that.disMax)) continue;
+                  // If this is the mouse, move the particle towards the mouse's position
+                  if (nowDot.label && Math.sqrt(dc) > Math.sqrt(_that.disMax) / 2) {
+                      dot.x -= dx * 0.02;
+                      dot.y -= dy * 0.02;
+                  }
+                  var ratio;
+                  ratio = (_that.disMax - dc) / _that.disMax;
+                  _that.ctx.beginPath();
+                  _that.ctx.lineWidth = ratio / 2;
+                  _that.ctx.strokeStyle = 'rgba(' + _that.color + ',' + parseFloat(ratio + 0.2).toFixed(1) + ')';
+                  _that.ctx.moveTo(dot.x, dot.y);
+                  _that.ctx.lineTo(nowDot.x, nowDot.y);
+                  _that.ctx.stroke();//No stroke, no effect
+
+                  //dots.splice(dots.indexOf(dot), 1);
+              }
+          });
+      };
+
+      //start animation
+      Dotline.prototype.start = function () {
+          var _that = this;
+          this.addDots();
+          setTimeout(function () {
+              _that.animate();
+          }, 100);
+      };
+
+      // hex color random
+      function randomColor() {
+          return "#" + Math.floor(Math.random() * 16777215).toString(16);
+      }
+
+      //Call
+      window.onload = function () {
+          console.dir(Dotline);
+          new Dotline({
+              dom: 'J_dotLine',//canvas id
+              cw: 2000,//canvas width
+              ch: 1000,//canvas height
+              ds: 120,//number of points
+              r: 0.5,//Dot radius
+              cl: randomColor(),//particle line color
+              dis: 100//Distance to trigger connection
+          }).start();
+      }
+  </script>
 </body>
 </html>
