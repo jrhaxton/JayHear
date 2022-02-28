@@ -1,0 +1,29 @@
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+    <div class="is-danger">
+        {{ messages[0] }}
+    </div>
+{% endif %}
+{% endwith %}
+
+<body>
+    <div>
+        <form method="POST">
+            <div>
+                Username:
+                <input type="text" name="username" />
+            </div>
+            <div>
+                Email:
+                <input type="text" name="email" />
+            </div>
+            <div>
+                Password:
+                <input type="password" name="password" />
+            </div>
+            <div>
+                <input type="submit" value="Submit" />
+            </div>
+        </form>
+    </div>
+</body>

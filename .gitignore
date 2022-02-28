@@ -1,0 +1,8 @@
+py-env/
+py-env/*
+flask/__pycache__/
+flask/__pycache__/*
+flask/test.db
+test_files/
+flask/uploads/
+flask/uploads/*

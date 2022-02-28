@@ -1,0 +1,14 @@
+<h1>Your Sounds</h1>
+<p>You have submitted {{ size }} sounds.</p>
+<p><a href="/submit-sound">Submit a sound</a></p>
+<p><a href="/logout">Logout</a></p>
+
+<h3>Your sounds:</h3>
+{% for sound in sounds %} 
+    <li><a href="{{ sound.dirty_path }}">Dirty Audio</a></li>
+    <audo controls>
+        <source src="{{ sound.dirty_path }}" type="audio/ogg">
+        <source src="{{ sound.dirty_path }}" type="audio/mpeg">
+    Your browser does not support the audio element.
+    </audo>
+{% endfor %}
