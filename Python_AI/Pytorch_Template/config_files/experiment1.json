@@ -1,0 +1,39 @@
+{
+    "arch": {
+        "type": "ConvAutoEncoder",
+        "args": {}
+    },
+    "DataLoader": {
+        "batch_size": 128,
+        "shuffle": "False",
+        "num_workers": 0
+    },
+    "optimizer": {
+        "type": "Adam",
+        "args":{
+            "lr": 0.001,
+            "weight_decay": 0
+        }
+    },
+    "loss": "MSELoss",
+    "lr_scheduler": {
+        "type": "StepLR",
+        "args": {
+            "step_size": 50,
+            "gamma": 0.1
+        }
+    },
+    "trainer": {
+        "epochs": 2,
+        "save_dir": "/home/braden/Environments/Research/Audio/Research(Refactored)/Model/"
+    },
+    "paths": {
+        "model" : "/home/braden/Environments/Research/Audio/Research(Refactored)/Model/state.pt",
+        "combined_audio" : "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/testing/1610/common_voice_en_1813-3.wav",
+        "clean_audio" : "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/Mozilla_WAV/1610/common_voice_en_1813.wav",
+        "denoised_audio" : "/home/braden/Environments/Research/Audio/Research(Refactored)/Data/Denoised/denoised.wav"
+
+    },
+    "spectrograms" : 1600,
+    "file_name" : "experiment1.json"
+}

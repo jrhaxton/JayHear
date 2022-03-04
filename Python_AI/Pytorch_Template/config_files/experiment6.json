@@ -1,0 +1,40 @@
+{
+    "arch": {
+        "type": "ConvAutoEncoder_1d",
+        "args": {}
+    },
+    "DataLoader": {
+        "batch_size": 128,
+        "shuffle": "True",
+        "num_workers": 0,
+        "drop_last" : "False"
+    },
+    "optimizer": {
+        "type": "Adam",
+        "args":{
+            "lr": 0.01,
+            "weight_decay": 0
+        }
+    },
+    "loss": "MSELoss",
+    "lr_scheduler": {
+        "type": "StepLR",
+        "args": {
+            "step_size": 100,
+            "gamma": 0.1
+        }
+    },
+    "trainer": {
+        "epochs": 200,
+        "save_dir": "/home/braden/Environments/Research/Audio/Research(Refactored)/Model/"
+    },
+    "paths": {
+        "model" : "/home/braden/Environments/Research/Audio/Research(Refactored)/Model/state.pt",
+        "combined_audio" : "/media/braden/Rage Pro/MS-SNSD/NoisySpeech_testing/noisy4_SNRdb_0.0_clnsp4.wav",
+        "clean_audio" : "/media/braden/Rage Pro/MS-SNSD/CleanSpeech_testing/clnsp4.wav",
+        "denoised_audio" : "/media/braden/Rage Pro/Denoised/experiment6.wav"
+
+    },
+    "spectrograms" : 1,
+    "file_name" : "experiment6.json"
+}
