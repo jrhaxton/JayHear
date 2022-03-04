@@ -223,9 +223,9 @@ def denoise_audio_files(model_path, noisy_audio_path, save_denoised_path):
 
 def main(arguments):
     """Main func."""
-    model_path="/home/braden/Work/JayHear/MS-SNSD/lightning_logs/20_hours/epoch=9-step=320449.ckpt"
-    noisy_audio_path="/home/braden/Work/JayHear/MS-SNSD/noisy1_SNRdb_0.0_clnsp1.wav"
-    save_denoised_path="/home/braden/Work/JayHear/denoised_audio.wav"
+    model_path="/home/satazero/Desktop/EECS582/Python_AI/Denoising_Pipeline/epoch=9-step=320449.ckpt"
+    noisy_audio_path="/home/satazero/Desktop/EECS582/Python_AI/Denoising_Pipeline/noisy1_SNRdb_0.0_clnsp1.wav"
+    save_denoised_path="/home/satazero/Desktop/EECS582/denoised_audio.wav"
     denoise_audio_files(model_path, noisy_audio_path, save_denoised_path)
 
 
