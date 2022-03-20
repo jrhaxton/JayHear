@@ -71,7 +71,7 @@ def load_user(user_id):
 ############################
 #          Routes          #
 ############################
-@app.route('/')
+@app.route('/', methods = ['GET'])
 def index():
     if current_user.is_authenticated:
         return render_template('index_auth.html', name=current_user.username)
