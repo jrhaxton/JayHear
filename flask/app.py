@@ -11,7 +11,7 @@ app = Flask(__name__)
 ############################
 #       Config & Init      #
 ############################
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////home/satazero/Desktop/EECS582/flask/test.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///C:\\Users\\haxto\\OneDrive\\Desktop\\JayHear\\test.db'
 app.config['UPLOAD_FOLDER'] = './uploads/'
 app.config['MAX_CONTENT_PATH'] = 128000
 app.config['SECRET_KEY'] = 'dev-key'
@@ -24,6 +24,7 @@ login_manager.init_app(app)
 #         User Model       #
 ############################
 class User(UserMixin, db.Model):
+    __tablename__ = 'user'
     id = db.Column(
         db.Integer, 
         primary_key=True
@@ -137,7 +138,7 @@ def login_post():
 
     login_user(user)
 
-    return redirect(url_for('index'))
+    return redirect(url_for('submit'))
 
 @app.route('/logout')
 @login_required
@@ -153,12 +154,16 @@ def sounds():
         file_owner = current_user.username
         sounds = Sound.query.filter_by(file_owner=current_user.username).all()
 
-        return render_template('sounds.html', size=len(sounds), sounds=sounds)
+        return render_template('sounds.html', size=len(sounds), sounds=sounds, name=current_user.username)
     return redirect(url_for('login'))
 
 @app.route('/submit-sound')
 def submit():
-    return render_template('submit.html')
+    if current_user.is_authenticated:
+        file_owner = current_user.username
+        sounds = Sound.query.filter_by(file_owner=current_user.username).all()
+        return render_template('submit.html', size=len(sounds), sounds=sounds, name=current_user.username)
+    return redirect(url_for('login'))
 
 @app.route('/submit-sound', methods=['POST'])
 def submit_post():

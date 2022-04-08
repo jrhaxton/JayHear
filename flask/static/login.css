@@ -1,0 +1,159 @@
+ul {
+    list-style-type: none;
+    padding:0rem;
+    overflow: hidden;
+    border-width: 1.563rem;
+    border-color:rgb(28, 72, 138);
+    text-align: center;
+    background-color: rgb(28, 72, 138);
+    margin: 0rem;
+    color: #fff;
+    font-weight: bold;
+    font-size: 2.5rem;
+}
+h1{
+    font-size: 3rem;
+    padding:0rem;
+    margin: 0rem;
+}
+
+.login{
+    font-size: 1rem;
+    color:white;
+}
+
+div {
+    color: rgb(28, 72, 138);
+    float: right;
+    margin: 0.313rem;
+}
+
+div a {
+    color:white;
+    text-align: center;
+    padding: 1rem 1.25rem;
+    text-decoration: none;
+}
+
+div a:hover {
+    background-color:rgba(9, 25, 97, 0.151);
+    opacity: 0.8;
+}
+
+form{
+    display:flex;
+    justify-content: center;
+}
+
+.form {
+    text-align: center;
+    border-radius: 1.5em;
+}
+
+.log {
+    color: rgb(28, 72, 138);;
+    font-weight: bold;
+    font-size: 3rem;
+}
+
+input[type=text], [type=password]{
+    border-radius: .25rem;
+    width: 20rem;
+}
+
+input[type=submit]{
+    border:none
+}
+
+.email {
+    width: 100%;
+    color: rgb(38, 50, 56);
+    font-weight: 700;
+    font-size: .875rem;
+    letter-spacing: .063rem;
+    padding-top: .625rem ;
+    border: none;
+    outline: none;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+form.email {
+    padding-top: 2.5rem;
+}
+
+.password {
+    width: 100%;
+    color: rgb(38, 50, 56);
+    font-weight: 700;
+    font-size: .875rem;
+    letter-spacing: .063rem;
+    padding-top: .625rem ;
+    border: none;
+    outline: none;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.email:focus, .password:focus {
+    border: 0.125rem solid rgba(0, 0, 0, 0.18) !important; 
+}
+
+.buttons{
+    display: block;
+    margin-right:40%;
+}
+
+input.submit {
+    display: flex;
+    margin: auto;
+    width: 11rem;
+    height: 3.25rem;
+    border-radius: 1.5rem;
+    background: linear-gradient(40deg,rgb(28, 72, 138), rgb(42, 112, 216));
+    box-shadow: 0 0.25rem 0.438rem rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    color: #fff;
+    font-weight: bold;
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: transform .2s ease-out;
+}
+
+input.submit:hover{
+    transform: scale(1.02);
+}
+
+.sign {
+
+    justify-content: center;
+    display: block;
+    width: 11rem;
+    height: 3.25rem;
+    border-radius: 1.5rem;
+    background: linear-gradient(40deg,rgb(28, 72, 138), rgb(42, 112, 216));
+    box-shadow: 0 0.25rem 0.438rem rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: bold;
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: transform .2s ease-out;
+}
+
+.sign:hover{
+    transform: scale(1.02);
+}
+
+a, a:hover, a:visited, a:focus, a:active  {
+    text-decoration: none;
+    color: inherit;
+    outline: 0;
+    cursor: pointer;
+}
+
+
+    
