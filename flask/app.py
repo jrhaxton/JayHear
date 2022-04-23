@@ -6,12 +6,15 @@ from flask_login import LoginManager, UserMixin, login_required, current_user, l
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
+# Model import
+import denoise_model.denoise
+
 app = Flask(__name__)
 
 ############################
 #       Config & Init      #
 ############################
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///C:\\Users\\haxto\\OneDrive\\Desktop\\JayHear\\test.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////home/satazero/Desktop/JayHear/test.db'
 app.config['UPLOAD_FOLDER'] = './uploads/'
 app.config['MAX_CONTENT_PATH'] = 128000
 app.config['SECRET_KEY'] = 'dev-key'
@@ -114,7 +117,7 @@ def signup_post():
 
     login_user(new_user)
 
-    os.mkdir("uploads/" + str(current_user.username))
+    os.mkdir("/home/satazero/Desktop/JayHear/flask/static/uploads/" + str(current_user.username))
 
     return redirect(url_for('index'))
 
@@ -169,9 +172,15 @@ def submit():
 def submit_post():
     f = request.files['file']
     file_name = str(uuid.uuid4().hex)
-    dirty_file_path = "uploads/" + str(current_user.username) + "/dirty_" + file_name + ".mp3"
-    clean_file_path = "uploads/" + str(current_user.username) + "/clean_" + file_name + ".mp3"
+    dirty_file_path = "/home/satazero/Desktop/JayHear/flask/static/uploads/" + str(current_user.username) + "/dirty_" + file_name + ".wav"
+    clean_file_path = "/home/satazero/Desktop/Jayhear/flask/static/uploads/" + str(current_user.username) + "/clean_" + file_name + ".wav"
     f.save(dirty_file_path)
+
+    print( "Dirty: " + dirty_file_path )
+    print( "Clean: " + clean_file_path )
+
+    # Import model package and run the file through it
+    denoise_model.denoise.denoise( str(dirty_file_path), str(clean_file_path) )
 
     new_sound = Sound(
         file_owner=current_user.username, 
