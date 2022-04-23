@@ -41,6 +41,7 @@ div a:hover {
 }
 
 form{
+    margin-top: 15rem;
     display:flex;
     justify-content: center;
 }
