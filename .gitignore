@@ -6,3 +6,4 @@ flask/test.db
 test_files/
 flask/uploads/
 flask/uploads/*
+test.db
