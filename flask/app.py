@@ -1,3 +1,4 @@
+from distutils.command.clean import clean
 import os
 import uuid
 from flask import Flask, render_template, redirect, url_for, request, flash
@@ -5,13 +6,14 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_required, current_user, login_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+from denoise import denoise
 
 app = Flask(__name__)
 
 ############################
 #       Config & Init      #
 ############################
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///C:\\Users\\haxto\\OneDrive\\Desktop\\JayHear\\test.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://///home/braden/Work/JayHear_JOsh/JayHear/test.db'
 app.config['UPLOAD_FOLDER'] = './uploads/'
 app.config['MAX_CONTENT_PATH'] = 128000
 app.config['SECRET_KEY'] = 'dev-key'
@@ -85,6 +87,7 @@ def signup_success():
 
 @app.route('/signup')
 def signup():
+    print("test")
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     return render_template('signup.html')
@@ -114,7 +117,7 @@ def signup_post():
 
     login_user(new_user)
 
-    os.mkdir("uploads/" + str(current_user.username))
+    os.mkdir('/home/braden/Work/JayHear_JOsh/JayHear/flask/static/uploads/' + str(current_user.username))
 
     return redirect(url_for('index'))
 
@@ -169,9 +172,14 @@ def submit():
 def submit_post():
     f = request.files['file']
     file_name = str(uuid.uuid4().hex)
-    dirty_file_path = "uploads/" + str(current_user.username) + "/dirty_" + file_name + ".mp3"
-    clean_file_path = "uploads/" + str(current_user.username) + "/clean_" + file_name + ".mp3"
+    dirty_file_path = "/home/braden/Work/JayHear_JOsh/JayHear/flask/static/uploads/" + str(current_user.username) + "/dirty_" + file_name + ".mp3"
+    clean_file_path = "/home/braden/Work/JayHear_JOsh/JayHear/flask/static/uploads/" + str(current_user.username) + "/clean_" + file_name
     f.save(dirty_file_path)
+
+    denoise(dirty_file_path, clean_file_path)
+
+    print(dirty_file_path)
+    print(clean_file_path)
 
     new_sound = Sound(
         file_owner=current_user.username, 
