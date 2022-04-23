@@ -223,7 +223,7 @@ def denoise_audio_files(model_path, noisy_audio_path, save_denoised_path):
     print('=> Denoising Audio Complete')
 
 def denoise(noisy, clean):
-    model_path="/home/braden/Environments/JayHear_Production/project/28_hours_small/28_hours_small/checkpoints/epoch=3-step=192551.ckpt"
+    model_path="/home/satazero/Desktop/JayHear/Python_AI/Denoising_Pipeline/epoch=9-step=320449.ckpt"
     denoise_audio_files(model_path, noisy, clean)
 
 def main(arguments):

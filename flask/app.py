@@ -4,6 +4,7 @@ import uuid
 from flask import Flask, render_template, redirect, url_for, request, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_required, current_user, login_user, logout_user
+from sqlalchemy import false
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from denoise import denoise
@@ -13,7 +14,7 @@ app = Flask(__name__)
 ############################
 #       Config & Init      #
 ############################
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://///home/braden/Work/JayHear_JOsh/JayHear/test.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://///home/satazero/Desktop/JayHear/test.db'
 app.config['UPLOAD_FOLDER'] = './uploads/'
 app.config['MAX_CONTENT_PATH'] = 128000
 app.config['SECRET_KEY'] = 'dev-key'
@@ -117,7 +118,7 @@ def signup_post():
 
     login_user(new_user)
 
-    os.mkdir('/home/braden/Work/JayHear_JOsh/JayHear/flask/static/uploads/' + str(current_user.username))
+    os.mkdir('/home/satazero/Desktop/JayHear/flask/static/uploads/' + str(current_user.username))
 
     return redirect(url_for('index'))
 
@@ -172,8 +173,8 @@ def submit():
 def submit_post():
     f = request.files['file']
     file_name = str(uuid.uuid4().hex)
-    dirty_file_path = "/home/braden/Work/JayHear_JOsh/JayHear/flask/static/uploads/" + str(current_user.username) + "/dirty_" + file_name + ".mp3"
-    clean_file_path = "/home/braden/Work/JayHear_JOsh/JayHear/flask/static/uploads/" + str(current_user.username) + "/clean_" + file_name
+    dirty_file_path = "/home/satazero/Desktop/JayHear/flask/static/uploads/" + str(current_user.username) + "/dirty_" + file_name + ".wav"
+    clean_file_path = "/home/satazero/Desktop/JayHear/flask/static/uploads/" + str(current_user.username) + "/clean_" + file_name + ".wav"
     f.save(dirty_file_path)
 
     denoise(dirty_file_path, clean_file_path)
@@ -183,8 +184,8 @@ def submit_post():
 
     new_sound = Sound(
         file_owner=current_user.username, 
-        clean_path=clean_file_path,
-        dirty_path=dirty_file_path,
+        dirty_path=str(current_user.username + "/dirty_" + file_name + ".wav"),
+        clean_path=str(current_user.username + "/clean_" + file_name + ".wav")
     )
 
     db.session.add(new_sound)
