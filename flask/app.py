@@ -9,6 +9,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from denoise import denoise
 
+# Model import
+import denoise_model.denoise
+
 app = Flask(__name__)
 
 ############################

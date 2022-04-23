@@ -228,6 +228,10 @@ def main(arguments):
     save_denoised_path="/home/satazero/Desktop/EECS582/denoised_audio.wav"
     denoise_audio_files(model_path, noisy_audio_path, save_denoised_path)
 
+def denoise( noisy_path, denoised_path ):
+    model_path = "/home/satazero/Desktop/EECS582/Python_AI/Denoising_Pipeline/epoch=9-step=320449.ckpt"
+    denoise_audio_files( model_path, noisy_path, denoised_path )
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])

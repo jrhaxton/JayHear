@@ -6,47 +6,66 @@
     <h1>JayHear</h1>
     <div align ="right" class="login"><a href="/logout">Logout</a>
 </ul>
-<h1 align="center">{{ name }}'s Sounds</h1>
-<div class="container">
-    <div class="row">
-        <div class="col-8">
-            <form method="POST" enctype="multipart/form-data" class="file-input">
-                <input type="file"  id="file" name="file" class="file"
-                    accept=".mp3, audio/*"
-                    required
-                />
-                <label for="file">
-                    Select file
-                    <p class="file-name"></p>
-                </label>
-                <input type="submit" value="Submit" />
-            </form>
-            <br>
-            <audio controls>
-                Your browser does not support the audio element.
-            </audio>
-            <div align="center">
-            <button class="save">Save</button>
+<body>
+    <h1 align="center">{{ name }}'s Sounds</h1>
+    <div class="form">
+        <form method="POST" enctype="multipart/form-data" class="file-input">
+            <input type="file"  id="file" name="file" class="file"
+                accept=".mp3, audio/*"
+                required onchange= "submit()"
+            />
+            <label for="file">
+                Select file
+                <p class="file-name"></p>
+            </label>
+        </form>
+        <br>
+        <audio controls>
+            Your browser does not support the audio element.
+        </audio>
+        <div align="center">
             <button class="download">Download</button>
-            </div>
-        </div>
-        <div class="col-4">
-            <div class="saved">
-                <h3>Your sounds:</h3>
-                <div class="placeholders">
-                    sfdgdfjgkfjgklfjglkfjgjkgf <br>
-                    ldjslfskjgkljfkldjgflkgjdflkg <br>
-                    lkgjfgjfglkjfglkfjglkfg
-                </div>
-                {% for sound in sounds %} 
-                    <li><a href="{{ sound.dirty_path }}">Dirty Audio</a></li>
-                    <audo controls>
-                        <source src="{{ sound.dirty_path }}" type="audio/ogg">
-                        <source src="{{ sound.dirty_path }}" type="audio/mpeg">
-                    Your browser does not support the audio element.
-                    </audo>
-                {% endfor %}
-            </div>
         </div>
     </div>
-</div>
+    <div class="saved">
+        <h3 align="center">Your sounds:</h3>
+        <div align="left" class="placeholders">
+            sfdgdfjgkfjgklfjglkfjgjkgf <br>
+            ldjslfskjgkljfkldjgflkgjdflkg <br>
+            lkgjfgjfglkjfglkfjglkfg
+        </div>
+        {% for sound in sounds %} 
+            <li><a href="{{ sound.dirty_path }}">Dirty Audio</a></li>
+            <audo controls>
+                <source src="{{ sound.dirty_path }}" type="audio/ogg">
+                <source src="{{ sound.dirty_path }}" type="audio/mpeg">
+            Your browser does not support the audio element.
+            </audo>
+        {% endfor %}
+    </div>
+    <div id="bars">
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+    </div>
+</body>
