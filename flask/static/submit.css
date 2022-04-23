@@ -19,13 +19,17 @@ h1{
 
 .form
 {
-  position: absolute;
-  left: 0;
-  max-width: 66rem;
+  width: 100%;
+  text-align: center;
+}
+
+.form label 
+{
+  margin: 0 auto;
 }
 
 form{
-  margin-left: 35rem;
+  margin: 0 auto;
 }
 
 .login{
@@ -178,6 +182,13 @@ audio{
   }
 }
 
+audio 
+{
+  min-width: 400px;
+  height: auto;
+  object-fit: inherit;
+}
+
 .bar:nth-child(1)  { left: 2rem; animation-duration: 574ms; }
 .bar:nth-child(2)  { left: 6rem; animation-duration: 533ms; }
 .bar:nth-child(3)  { left: 10rem; animation-duration: 507ms; }
@@ -201,3 +212,9 @@ audio{
 .bar:nth-child(21) { left: 82rem; animation-duration: 562ms; }
 .bar:nth-child(22) { left: 86rem; animation-duration: 512ms; }
 .bar:nth-child(23) { left: 90rem; animation-duration: 502ms; }
+.bar:nth-child(24) { left: 94rem; animation-duration: 515ms; }
+.bar:nth-child(25) { left: 98rem; animation-duration: 580ms; }
+.bar:nth-child(26) { left: 102rem; animation-duration: 540ms; }
+.bar:nth-child(27) { left: 106rem; animation-duration: 518ms; }
+.bar:nth-child(28) { left: 110rem; animation-duration: 565ms; }
+.bar:nth-child(29) { left: 114rem; animation-duration: 525ms; }

@@ -19,30 +19,28 @@
                 <p class="file-name"></p>
             </label>
         </form>
-        <br>
-        <audio controls>
-            Your browser does not support the audio element.
-        </audio>
-        <div align="center">
-            <button class="download">Download</button>
-        </div>
     </div>
+    <!--
     <div class="saved">
         <h3 align="center">Your sounds:</h3>
-        <div align="left" class="placeholders">
-            sfdgdfjgkfjgklfjglkfjgjkgf <br>
-            ldjslfskjgkljfkldjgflkgjdflkg <br>
-            lkgjfgjfglkjfglkfjglkfg
-        </div>
         {% for sound in sounds %} 
-            <li><a href="{{ sound.dirty_path }}">Dirty Audio</a></li>
-            <audo controls>
-                <source src="{{ sound.dirty_path }}" type="audio/ogg">
-                <source src="{{ sound.dirty_path }}" type="audio/mpeg">
-            Your browser does not support the audio element.
-            </audo>
-        {% endfor %}
+        <li><a href="{{ sound.dirty_path }}">Dirty Audio</a>
+        <audio controls>
+            <source src="{{ url_for('static', filename='uploads/' + sound.dirty_path ) }}" type="audio/ogg">
+            <source src="{{ url_for('static', filename='uploads/' + sound.dirty_path ) }}" type="audio/mpeg">
+        Your browser does not support the audio element.
+        </audio>
+        </li>
+    
+        <li><a href="{{ sound.clean_path }}">Clean Audio</a>
+        <audio controls="controls">
+            <source src="{{ url_for('static', filename='uploads/' + sound.clean_path ) }}" type="audio/ogg">
+            <source src="{{ url_for('static', filename='uploads/' + sound.clean_path ) }}" type="audio/mpeg">
+        </audio>
+        </li>
+    {% endfor %}
     </div>
+-->
     <div id="bars">
         <div class="bar"></div>
         <div class="bar"></div>
@@ -67,5 +65,11 @@
         <div class="bar"></div>
         <div class="bar"></div>
         <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>        
     </div>
 </body>
