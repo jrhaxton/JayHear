@@ -41,7 +41,7 @@ div a:hover {
 }
 
 form{
-    margin-top: 14rem;
+    margin-top: 8rem;
     display:flex;
     justify-content: center;
 }
@@ -119,7 +119,7 @@ form.email {
 
 .buttons{
     display: block;
-    margin-right:42.5%;
+    margin-right:44.5%;
 }
 
 input.submit {
@@ -172,4 +172,13 @@ a, a:hover, a:visited, a:focus, a:active  {
     cursor: auto;
 }
 
+.tos {
+    display:block;
+    padding: 1em;
+    margin: 2em;
+    border: 3px solid #ddd;
+    background-color: #eee;
+    max-width: 800px;
+    margin-right: 41%;
+  }
     
